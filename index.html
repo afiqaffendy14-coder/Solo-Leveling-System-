@@ -186,6 +186,16 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .tcost{color:var(--gold);display:inline-flex;align-items:center;gap:3px}
 .item.tlock .swatch{filter:grayscale(.7) brightness(.6)}.item.tlock .item-name{opacity:.7}
 .addpray{display:block;margin:10px 0 2px;font-size:.82rem}
+#tour{position:fixed;inset:0;z-index:200}
+.tour-hl{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(2,4,10,.78),0 0 0 2px var(--glow),0 0 22px rgba(var(--g),.6);pointer-events:none;transition:all .25s ease}
+.tour-dim{position:fixed;inset:0;background:rgba(2,4,10,.82)}
+.tour-b{position:fixed;background:var(--panel,#0b1220);border:1px solid var(--glow);border-radius:10px;padding:14px 14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 18px rgba(var(--g),.3);display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(6px)}
+.tour-b small{font-family:var(--display);font-size:.6rem;letter-spacing:.18em;color:var(--glow)}
+.tour-b b{font-family:var(--display);font-size:1.05rem;letter-spacing:.03em}
+.tour-b p{margin:0;font-size:.9rem;line-height:1.45;color:var(--text)}
+.tour-bar{height:3px;background:rgba(var(--g),.15);border-radius:2px;overflow:hidden;margin:4px 0 2px}.tour-bar span{display:block;height:100%;background:var(--glow)}
+.tour-b .row{display:flex;gap:6px;align-items:center;margin:0}
+#tour{touch-action:none}
 .modal.tutm{max-width:420px}
 .tut{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
 .tut-ic{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--glow);box-shadow:0 0 18px rgba(var(--g),.45);color:var(--glow)}.tut-ic svg{width:26px;height:26px}
@@ -2489,18 +2499,59 @@ function showRankProposal(out){
     var ch=out.filter(function(x){return x.from!==x.rank;}).length;
     openModal('<span class="tag">Claude ranking</span><h2>'+(ch?ch+' rank change'+(ch>1?'s':'')+' suggested':'Your ranks look right')+'</h2><ul class="rklist">'+out.map(function(x){var d=x.from!==x.rank;return '<li class="'+(d?'chg':'')+'"><div><b>'+esc(x.name)+'</b><small>'+esc(x.why)+'</small></div><span class="rkto"><i class="r-'+x.from+'">'+x.from+'</i>'+(d?'→<i class="r-'+x.rank+'">'+x.rank+'</i>':'')+'</span><span class="sub">+'+RANK_XP[x.rank]+' XP · +'+goldFor(x.rank,RANK_XP[x.rank])+' G</span></li>';}).join("")+'</ul><div class="row"><button class="btn ghost grow" data-a="close">Keep mine</button>'+(ch?'<button class="btn primary" data-a="applyranks">Apply</button>':'')+'</div>');
 }
-var TUT=[
-  {ic:"quests",t:"Welcome, Hunter",x:"Turn your real habits into a game. Do them in real life, tick them here, and your hunter levels up.",demo:'<div class="tdemo lv"><b>LV 1</b><i></i><span>E-RANK</span></div>'},
-  {ic:"quests",t:"Tick your quests",x:"Tap the square when you finish a habit. Short on time? Tap <b>MINI</b> to do the small version for half the reward.",demo:'<div class="tdemo q"><span class="sq"></span><span class="mn">MINI</span><b>Push-ups</b><em>+15 XP</em></div>'},
-  {ic:"store",t:"Harder = more rewards",x:"Each quest has a rank from E to S. Harder habits pay much more XP and gold. Not sure? Tap a quest and use <b>Ask Claude to rank it</b>.",demo:'<div class="tdemo rk"><i class="r-E">E</i><i class="r-D">D</i><i class="r-C">C</i><i class="r-B">B</i><i class="r-A">A</i><i class="r-S">S</i></div>'},
-  {ic:"battle",t:"Keep the streak",x:"Clear every quest in a day for a bonus. Miss a day and you lose EXP, but you get 3 hearts a month to make up for it.",demo:'<div class="tdemo hearts"><span>♥</span><span>♥</span><span>♥</span></div>'},
-  {ic:"dungeon",t:"Spend and grow",x:"Spend gold in the <b>Store</b> on gear and themes. At level 10 the <b>Dungeon</b> opens, where your quests earn keys to fight monsters.",demo:'<div class="tdemo tabs"><span>Store</span><span>Dungeon</span><span>Hunter</span></div>'}
+var TOUR=[
+  {c:"Welcome",t:"Welcome, Hunter",x:"This app turns your real habits into a game. You do the habit in real life, tick it here, and your hunter gets stronger. This quick tour shows you every part. Tap Next to start."},
+  {c:"Basics",tab:"quests",s:".hdr .lvl",t:"Your level",x:"This is your level. You start at 1. Every few levels you go up a rank, from E all the way to SSS."},
+  {c:"Basics",tab:"quests",s:".xp",t:"EXP bar",x:"Finishing habits gives EXP. When this bar fills up, you level up."},
+  {c:"Basics",tab:"quests",s:".chip.gold",t:"Gold",x:"Habits also give gold. You spend it in the Store on gear, themes and your own real-life rewards."},
+  {c:"Basics",tab:"quests",s:".chips .chip:nth-child(2)",t:"Streak",x:"How many days in a row you finished every quest. Finishing them all in a day also gives bonus EXP."},
+  {c:"Basics",tab:"quests",s:".chip.red",t:"Hearts",x:"You get 3 hearts each month. Missed a day? A heart lets you make up for it the next day with a make-up quest, so your streak survives."},
+  {c:"Quests",tab:"quests",s:"li.q .check",t:"Tick it off",x:"A quest is a daily habit. When you've done it, tap this box. That's it."},
+  {c:"Quests",tab:"quests",s:"li.q .mini-sq",t:"MINI",x:"Busy day? Do the tiny version shown under the quest name and tap MINI instead. You get half the reward, and it still counts."},
+  {c:"Quests",tab:"quests",s:"li.q .q-xp",t:"Rewards",x:"What this quest pays: EXP on top, gold below. Harder ranks pay a lot more, so a tough habit is worth it."},
+  {c:"Quests",tab:"quests",s:"li.q .q-main",t:"Edit a quest",x:"Tap the name to change it. Here you set its rank (difficulty), the stat it trains, a weekly increase like +2 reps a week, and which days it shows with a checklist for each day."},
+  {c:"Quests",tab:"quests",s:".rankall",t:"Ask Claude",x:"Not sure how hard a habit is? Tap here. Claude opens with the question ready. Copy its answer, come back, and tap Paste Claude's reply."},
+  {c:"Quests",tab:"quests",s:"[data-a=addq]",t:"Add your habits",x:"Add your own habits here. Start small. You can always make them harder later."},
+  {c:"Quests",tab:"quests",s:"[data-a=rest]",t:"Rest day",x:"Planned day off, or sick? Tap Rest day and today won't break your streak or cost you EXP."},
+  {c:"Quests",tab:"quests",sec:"Gates",t:"Gates",x:"Gates are big one-time goals, like running your first 5 km. Tick one when you achieve it for a big reward."},
+  {c:"Quests",tab:"quests",s:".addpray",t:"Prayers",x:"Tap this to add the 5 daily prayers. They get their own panel where you mark each one on time or late."},
+  {c:"Quests",tab:"quests",s:"[data-a=notes]",t:"Notifications",x:"Important things show up here: level ups, new titles, missed days and boss wins."},
+  {c:"Battle",tab:"battle",s:"#app section.win",t:"Battle",x:"Use this for a habit you're trying to quit. Each day, tap Victory if you stayed clean or Not today if you slipped. Rename it to whatever you're fighting."},
+  {c:"Hunter",tab:"hunter",sec:"Hunter",t:"Your hunter",x:"This is you. Power shows how strong you are overall. It goes up with your level, stats, gear and shadow army."},
+  {c:"Hunter",tab:"hunter",s:"[data-a=customize]",t:"Change your look",x:"Customize changes your body and face. Wardrobe takes you to the Store to change gear."},
+  {c:"Hunter",tab:"hunter",sec:"Stats",t:"Stats",x:"Six stats: Strength, Vitality, Agility, Intelligence, Willpower and Spirit. Each quest trains one. Every level up gives you a point to add with the + button."},
+  {c:"Hunter",tab:"hunter",sec:"Real-World Tests",t:"Real-world tests",x:"Every week, test yourself for real, like max push-ups or plank time, and log it. Then you can see actual progress, not just game numbers."},
+  {c:"Hunter",tab:"hunter",sec:"Titles",t:"Titles",x:"Reach milestones to earn titles. Tap one to wear it under your name. You can wear up to 3."},
+  {c:"Dungeon",tab:"dungeon",s:".dsegs",t:"Dungeon",x:"Unlocks at level 10. Finishing quests earns keys, and each key is one fight. Shadows is your army and Skills are powers you equip for fights."},
+  {c:"Store",tab:"store",s:".slotnav",t:"Armory",x:"Buy gear for your hunter here. Each item shows its rank and stats. Higher-rank gear needs a higher hunter rank."},
+  {c:"Store",tab:"store",sec:"My Rewards",t:"Real rewards",x:"Add real-life treats, like a movie night or new shoes, with a gold price. Earn the gold, then buy them guilt-free."},
+  {c:"Store",tab:"store",sec:"Items",t:"Items",x:"A Streak Shield saves your streak when you have no hearts left. An EXP Potion gives 1.5× rewards for one day."},
+  {c:"Store",tab:"store",sec:"Window Themes",t:"Themes",x:"Change the app's colours. Each theme needs a certain rank and costs gold."},
+  {c:"Stats",tab:"insights",s:"#app section.win",t:"Your progress",x:"Charts and a monthly report of how you're doing, plus tips from the System on what to improve."},
+  {c:"Settings",tab:"quests",s:".hdr .icons [data-a=settings]",t:"Settings",x:"Change your name and sounds, back up your progress, and replay this tour any time."},
+  {c:"Done",t:"You're ready",x:"Start with one or two habits you can do every day. Tick them, keep your streak, and watch your hunter grow. Good luck, Hunter."}
 ];
+function tourEl(st){if(st.sec){var tags=document.querySelectorAll("#app section .tag");for(var i=0;i<tags.length;i++)if(tags[i].textContent.trim()===st.sec)return tags[i].closest("section");return null;}return st.s?document.querySelector(st.s):null;}
+function tourEnd(){var o=document.getElementById("tour");if(o)o.remove();if(!S.tourDone){S.tourDone=1;save();}document.body.classList.remove("touring");}
 function showTutorial(i){
-  i=Math.max(0,Math.min(TUT.length-1,i||0));view.tut=i;var T=TUT[i],last=i===TUT.length-1;
-  openModal('<div class="tut"><div class="tut-ic">'+(ICONS[T.ic]||"")+'</div><small>'+(i+1)+' / '+TUT.length+'</small><h2>'+T.t+'</h2>'+T.demo+'<p>'+T.x+'</p>'+
-    '<div class="tdots">'+TUT.map(function(_,k){return '<i class="'+(k===i?'on':'')+'"></i>';}).join("")+'</div>'+
-    '<div class="row">'+(i?'<button class="btn ghost" data-a="tutgo" data-id="'+(i-1)+'">Back</button>':'<button class="btn ghost" data-a="tutdone">Skip</button>')+'<button class="btn primary grow" data-a="'+(last?'tutdone':'tutgo')+'" data-id="'+(i+1)+'">'+(last?'Start hunting':'Next')+'</button></div></div>','tutm');
+  i=Math.max(0,Math.min(TOUR.length-1,i||0));
+  var st=TOUR[i];
+  while(st.s&&st.s===".addpray"&&!document.querySelector(".addpray")&&S.quests.some(isPrayer)&&i<TOUR.length-1){i++;st=TOUR[i];}
+  if(typeof closeModal==="function"&&ov.classList.contains("open"))closeModal();
+  if(st.tab&&view.tab!==st.tab){view.tab=st.tab;render();}
+  document.body.classList.add("touring");
+  var el=tourEl(st);if(el&&el.offsetParent===null&&getComputedStyle(el).position!=="fixed")el=null;
+  if(el){var big=el.getBoundingClientRect().height>window.innerHeight*.6;el.scrollIntoView({block:big?"start":"center",behavior:"instant"});}else window.scrollTo(0,0);
+  setTimeout(function(){
+    var o=document.getElementById("tour");if(!o){o=document.createElement("div");o.id="tour";document.body.appendChild(o);}
+    var r=el?el.getBoundingClientRect():null,vw=window.innerWidth,vh=window.innerHeight,pad=6;
+    var hl=r?'<div class="tour-hl" style="left:'+(r.left-pad)+'px;top:'+(Math.max(4,r.top-pad))+'px;width:'+(r.width+pad*2)+'px;height:'+(Math.min(r.height,vh*.55)+pad*2)+'px"></div>':'<div class="tour-dim"></div>';
+    var bw=Math.min(360,vw-24),below=r&&(r.top+Math.min(r.height,vh*.55)+pad+190<vh),top=r?(below?r.top+Math.min(r.height,vh*.55)+pad+12:Math.max(12,r.top-pad-12-200)):null;
+    var pos=r?'left:'+Math.max(12,Math.min(vw-bw-12,r.left+r.width/2-bw/2))+'px;'+(below?'top:'+top+'px':'bottom:'+Math.max(12,vh-(r.top-pad-12))+'px'):'left:50%;top:50%;transform:translate(-50%,-50%)';
+    var last=i===TOUR.length-1;
+    o.innerHTML=hl+'<div class="tour-b" style="width:'+bw+'px;'+pos+'"><small>'+esc(st.c).toUpperCase()+' · '+(i+1)+' / '+TOUR.length+'</small><b>'+esc(st.t)+'</b><p>'+esc(st.x)+'</p><div class="tour-bar"><span style="width:'+((i+1)/TOUR.length*100).toFixed(0)+'%"></span></div><div class="row">'+(last?'':'<button class="btn ghost sm" data-tour="end">Skip tour</button>')+'<span style="flex:1"></span>'+(i?'<button class="btn sm" data-tour="'+(i-1)+'">Back</button>':'')+'<button class="btn primary sm" data-tour="'+(last?'end':i+1)+'">'+(last?'Start hunting':'Next')+'</button></div></div>';
+    o.addEventListener("wheel",function(e){e.preventDefault();},{passive:false});o.addEventListener("touchmove",function(e){e.preventDefault();},{passive:false});o.onclick=function(ev){var b=ev.target.closest("[data-tour]");if(!b)return;var v=b.getAttribute("data-tour");play(v==="end"?"level":"tab");if(v==="end"){tourEnd();view.tab="quests";render();window.scrollTo(0,0);}else showTutorial(+v);};
+  },el?260:30);
 }
 function evolveForm(q){
   play("open");var ni=RANKS.indexOf(q.rank),next=RANKS[Math.min(RANKS.length-1,ni+1)];
@@ -2723,8 +2774,8 @@ function handleAction(b){
   else if(a==="alloc"){if(!R||R.points<1)return;var s=b.getAttribute("data-s");S.alloc[s]=(S.alloc[s]||0)+1;save();render();play("complete");toast("System",STAT_NAMES[s]+" +1");}
   else if(a==="addprayers"){var bp=derive();S.quests=prayerQuests(today()).concat(S.quests);afterChange(bp,"System","Prayers panel added.","notify");}
   else if(a==="tutgo"){showTutorial(+id);play("tab");}
-  else if(a==="tutdone"){S.tutDone=1;save();closeModal();play("level");}
-  else if(a==="tutopen"){showTutorial(0);}
+  else if(a==="tutdone"){S.tourDone=1;save();closeModal();play("level");}
+  else if(a==="tutopen"){closeModal();showTutorial(0);}
   else if(a==="rankall")rankAllQuests();
   else if(a==="manopen"){if(view.manualPrompt)openClaude(view.manualPrompt);toast("Ask Claude","Question copied. Paste it in Claude if needed.");}
   else if(a==="manpaste"){readClip(function(t){var ta=document.getElementById("manreply");if(t&&ta){ta.value=t;var bt=document.querySelector('[data-a="manparse"]');if(bt)handleAction(bt);}});}
@@ -2849,7 +2900,7 @@ setInterval(function(){
 try{if(S.fresh)localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}
 render();checkDay();connect();
 if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
-if(!S.tutDone)setTimeout(function(){if(!ov.classList.contains('open'))showTutorial(0);else{var iv=setInterval(function(){if(!ov.classList.contains('open')&&!S.tutDone){clearInterval(iv);showTutorial(0);}else if(S.tutDone)clearInterval(iv);},800);}},600);
+if(!S.tourDone)setTimeout(function(){if(!ov.classList.contains('open'))showTutorial(0);else{var iv=setInterval(function(){if(!ov.classList.contains('open')&&!S.tourDone){clearInterval(iv);showTutorial(0);}else if(S.tourDone)clearInterval(iv);},800);}},600);
 })();
 </script>
 </body>
