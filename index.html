@@ -1768,9 +1768,8 @@ function tabQuests(){
   var offT=S.quests.filter(function(q){return !q.archived&&q.created<=t&&!onDay(q,t);});
   if(offT.length)h+='<div class="offday"><span class="sub">Not scheduled today:</span>'+offT.map(function(q){return '<button class="offq" data-a="editq" data-id="'+q.id+'">'+esc(q.name)+'<small>'+DOW_ORDER.filter(function(d){return q.days.indexOf(d)>=0;}).map(function(d){return DOW[d];}).join(" ")+'</small></button>';}).join("")+'</div>';
   h+='<div class="clear-line"><span class="sub"><b>'+allDone+'/'+allReq.length+'</b> done today</span><span style="display:flex;gap:8px;flex-wrap:wrap">';
-  if(!cleared&&allReq.length){h+=e._rest?'<button class="btn ghost" data-a="rest">Cancel rest day</button>':(R.rests7<1?'<button class="btn ghost" data-a="rest">Rest day</button>':'');}
   h+='<button class="btn" data-a="addq">+ Add quest</button></span></div>';
-  h+=how('Tap the box to complete a quest; it moves to Cleared. On a rough day, press <b>Mini</b> to do the smallest version for half EXP. It still counts toward clearing the day. Tap a quest\'s name to edit it. Clear everything, prayers included, for +'+CLEAR_BONUS+' bonus. One free rest day per week keeps your streak safe.')+'</section>';
+  h+=how('Tap the box to complete a quest; it moves to Cleared. On a rough day, press <b>Mini</b> to do the smallest version for half EXP. It still counts toward clearing the day. Tap a quest\'s name to edit it. Clear everything, prayers included, for +'+CLEAR_BONUS+' bonus.')+'</section>';
 
   var open=S.gates.filter(function(g){return !g.archived&&!g.done;}),gdone=S.gates.filter(function(g){return !g.archived&&g.done;});
   h+='<section class="win"><div class="win-h"><span class="tag">Gates</span>'+(gdone.length?'<button class="link" data-a="clearedgates">'+gdone.length+' cleared</button>':'<span class="sub">Big goals</span>')+'</div>';
@@ -2543,7 +2542,6 @@ var TOUR=[
   {c:"Quests",tab:"quests",s:"li.q .mini-sq",t:"MINI",x:"On a bad day, do the tiny version written under the quest name and tap MINI. Half the reward, but your streak stays alive."},
   {c:"Quests",tab:"quests",s:"li.q .q-main",t:"Tap the name to edit",x:"Inside: the rank (how hard it is), a weekly increase like +2 reps every 7 days, and which days it shows up with a checklist for each day, like a gym split."},
   {c:"Quests",tab:"quests",s:".rankall",t:"Ask Claude",x:"Claude opens with the question already written. Copy Claude's answer, come back, and tap Paste Claude's reply. The ranks fill in for you."},
-  {c:"Quests",tab:"quests",s:"[data-a=rest]",t:"Rest day",x:"Taking a planned day off or feeling sick? Tap this before the day ends and you won't lose your streak or any EXP."},
   {c:"Quests",tab:"quests",sec:"Gates",t:"Gates",x:"Big one-time goals, not daily habits. Tick one only when you've fully achieved it. They pay a lot."},
   {c:"Battle",tab:"battle",s:"#app section.win",t:"Battle",x:"For a habit you're quitting. Each day, mark whether you stayed clean. Tap Rename to name what you're fighting."},
   {c:"Hunter",tab:"hunter",sec:"Stats",t:"Stats",x:"Each quest trains one stat, so doing quests raises it. You also get 1 point every level up. Tap + to spend it."},
