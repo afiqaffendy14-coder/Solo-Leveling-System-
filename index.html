@@ -196,6 +196,13 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .tour-bar{height:3px;background:rgba(var(--g),.15);border-radius:2px;overflow:hidden;margin:4px 0 2px}.tour-bar span{display:block;height:100%;background:var(--glow)}
 .tour-b .row{display:flex;gap:6px;align-items:center;margin:0}
 #tour{touch-action:none}
+.modal.remm{max-width:460px}
+.remrow{display:grid;grid-template-columns:122px 1fr 34px;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(var(--g),.12)}
+.remrow input{min-width:0;background:rgba(0,0,0,.4);color:var(--text);border:1px solid rgba(var(--g),.3);border-radius:6px;padding:8px;font-family:inherit;font-size:.86rem}
+.remrow .ib{width:34px;height:34px}.remdays{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dchip.sm{padding:3px 0;font-size:.74rem}
+.remadd{display:flex;flex-direction:column;gap:8px;margin:14px 0 6px;padding:12px;border:1px solid rgba(var(--g),.25);border-radius:8px;background:rgba(0,0,0,.25)}.remadd b{font-family:var(--display);letter-spacing:.04em}
+.glinks{display:flex;flex-wrap:wrap;gap:6px}.glinks .btn{text-decoration:none}
 .modal.tutm{max-width:420px}
 .tut{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
 .tut-ic{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--glow);box-shadow:0 0 18px rgba(var(--g),.45);color:var(--glow)}.tut-ic svg{width:26px;height:26px}
@@ -2539,6 +2546,32 @@ function showTutorial(i){
     o.addEventListener("wheel",function(e){e.preventDefault();},{passive:false});o.addEventListener("touchmove",function(e){e.preventDefault();},{passive:false});o.onclick=function(ev){var b=ev.target.closest("[data-tour]");if(!b)return;var v=b.getAttribute("data-tour");play(v==="end"?"level":"tab");if(v==="end"){tourEnd();view.tab="quests";render();window.scrollTo(0,0);}else showTutorial(+v);};
   },el?260:30);
 }
+function remDefaults(){return [{id:uid(),time:"07:30",label:"Check today's quests",days:[]},{id:uid(),time:"21:00",label:"Finish your quests before the day resets",days:[]}];}
+function pad2(n){return (n<10?"0":"")+n;}
+function remStamp(time,d){var p=time.split(":");return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+"T"+pad2(+p[0])+pad2(+p[1])+"00";}
+function remRule(r){var by=["SU","MO","TU","WE","TH","FR","SA"];return "RRULE:FREQ="+(r.days&&r.days.length&&r.days.length<7?"WEEKLY;BYDAY="+r.days.map(function(d){return by[d];}).join(","):"DAILY");}
+function remStart(r){var d=new Date();d.setDate(d.getDate()+1);return d;}
+function remICS(list){var url=location.href.split("#")[0],now=new Date(),ts=now.getUTCFullYear()+pad2(now.getUTCMonth()+1)+pad2(now.getUTCDate())+"T"+pad2(now.getUTCHours())+pad2(now.getUTCMinutes())+"00Z";
+  var L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Hunter System//Reminders//EN","CALSCALE:GREGORIAN"];
+  list.forEach(function(r){var st=remStamp(r.time,remStart(r));L.push("BEGIN:VEVENT","UID:hunter-"+r.id+"@hunter-system","DTSTAMP:"+ts,"DTSTART:"+st,"DURATION:PT10M",remRule(r),"SUMMARY:Hunter: "+r.label.replace(/[,;]/g," "),"DESCRIPTION:Open your Hunter System: "+url,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+r.label.replace(/[,;]/g," "),"TRIGGER:PT0M","END:VALARM","END:VEVENT");});
+  L.push("END:VCALENDAR");return L.join("\r\n");}
+function remGoogle(r){var d=remStart(r),st=remStamp(r.time,d),p=r.time.split(":"),e=new Date(d);e.setHours(+p[0],+p[1]+10,0,0);var en=e.getFullYear()+pad2(e.getMonth()+1)+pad2(e.getDate())+"T"+pad2(e.getHours())+pad2(e.getMinutes())+"00";
+  var tz="";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"";}catch(x){}
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("Hunter: "+r.label)+"&details="+encodeURIComponent("Open your Hunter System: "+location.href.split("#")[0])+"&dates="+st+"/"+en+"&recur="+encodeURIComponent(remRule(r))+(tz?"&ctz="+encodeURIComponent(tz):"");}
+function remindersForm(){
+  if(!S.reminders)S.reminders=remDefaults();
+  var R2=S.reminders;
+  openModal('<span class="tag">Reminders</span><p class="sub" style="margin:6px 0 10px">Get lock-screen reminders through your phone\'s calendar. They work even when the app is closed or you\'re offline.</p>'+
+    '<div id="remlist">'+R2.map(function(r){return '<div class="remrow" data-id="'+r.id+'"><input type="time" value="'+r.time+'" class="rem-t"><input class="rem-l" maxlength="60" value="'+esc(r.label)+'"><button class="ib" data-a="remdel" data-id="'+r.id+'" aria-label="Remove">×</button><div class="remdays">'+DOW_ORDER.map(function(d){var on=!r.days||!r.days.length||r.days.indexOf(d)>=0;return '<button type="button" class="dchip sm'+(on?' on':'')+'" data-rd="'+d+'">'+DOW[d].charAt(0)+'</button>';}).join("")+'</div></div>';}).join("")+'</div>'+
+    '<button class="link" data-a="remadd">+ Add reminder</button>'+
+    '<div class="remadd"><b>Add them to your calendar</b><button class="btn primary" data-a="remics">iPhone, Samsung or other calendar</button><div class="glinks">'+R2.map(function(r){return '<a class="btn sm" target="_blank" rel="noopener" href="'+esc(remGoogle(r))+'">Google Calendar: '+esc(r.time)+'</a>';}).join("")+'</div>'+
+    '<p class="sub">iPhone: tap the first button, then <b>Add All</b>. Android with Google Calendar: tap each Google Calendar button and Save. If you change a reminder later, delete the old one in your calendar and add it again.</p></div>'+
+    '<div class="row"><button class="btn primary" data-a="close">Done</button></div>','remm');
+  var box=document.getElementById("remlist");
+  box.addEventListener("input",function(ev){var row=ev.target.closest(".remrow");if(!row)return;var r=find(S.reminders,row.getAttribute("data-id"));if(!r)return;if(ev.target.classList.contains("rem-t"))r.time=ev.target.value||r.time;else r.label=ev.target.value.trim()||"Hunter reminder";save();});
+  box.addEventListener("change",function(){remindersForm();});
+  box.addEventListener("click",function(ev){var c=ev.target.closest("[data-rd]");if(!c)return;var row=c.closest(".remrow"),r=find(S.reminders,row.getAttribute("data-id")),d=+c.getAttribute("data-rd");if(!r.days||!r.days.length)r.days=DOW_ORDER.slice();var i=r.days.indexOf(d);if(i>=0){if(r.days.length>1)r.days.splice(i,1);}else r.days.push(d);if(r.days.length===7)r.days=[];save();remindersForm();play("press");});
+}
 function evolveForm(q){
   play("open");var ni=RANKS.indexOf(q.rank),next=RANKS[Math.min(RANKS.length-1,ni+1)];
   openModal('<span class="tag">Quest Evolution</span><h2>The System detects mastery</h2><p>You cleared <b style="color:var(--text)">'+esc(q.name)+'</b> on at least 12 of the last 14 days. Raise the challenge?</p>'+
@@ -2664,7 +2697,7 @@ function settings(){
     '<div class="field"><label for="f-bk">Backup</label><textarea id="f-bk" class="mono" spellcheck="false">'+esc(JSON.stringify(S))+'</textarea></div>'+
     '<p class="sub">Copy this text somewhere safe. To restore, paste a backup and press Restore.</p>'+
     '<div class="row"><button class="btn" data-a="copybk">Copy backup</button><button class="btn" data-a="restore">Restore</button></div>'+
-    '<div class="row" style="justify-content:flex-start;margin:4px 0 10px"><button class="btn" data-a="tutopen">How to play</button></div>'+
+    '<div class="row" style="justify-content:flex-start;margin:4px 0 10px"><button class="btn" data-a="tutopen">How to play</button><button class="btn" data-a="reminders">Reminders</button></div>'+
     '<div class="field"><label>Preview mode</label></div><div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn'+(S.unlockAll?' primary':'')+'" data-a="previewmode">'+(S.unlockAll?'On: everything unlocked':'Off: unlock by rank')+'</button></div><p class="sub">Preview mode unlocks all gear and skills so you can try them. Turn it off to earn them for real.</p>'+
     '<div class="field"><label>Backup</label></div><div class="row" style="justify-content:flex-start;margin-top:6px;flex-wrap:wrap"><button class="btn" data-a="exportbk">Export backup</button><button class="btn" data-a="importbk">Import backup</button></div><p class="sub">Your progress lives on this device. Export a backup now and then, and import it to move to a new phone.</p>'+
     '<div class="row"><button class="btn danger grow" data-a="reset">Reset everything</button><button class="btn ghost" data-a="close">Close</button></div>');
@@ -2762,6 +2795,10 @@ function handleAction(b){
   else if(a==="tutgo"){showTutorial(+id);play("tab");}
   else if(a==="tutdone"){S.tourDone=1;save();closeModal();play("level");}
   else if(a==="tutopen"){closeModal();showTutorial(0);}
+  else if(a==="reminders"){remindersForm();play("open");}
+  else if(a==="remadd"){S.reminders=S.reminders||[];S.reminders.push({id:uid(),time:"18:00",label:"Time for your quests",days:[]});save();remindersForm();}
+  else if(a==="remdel"){S.reminders=(S.reminders||[]).filter(function(r){return r.id!==id;});save();remindersForm();}
+  else if(a==="remics"){var ics=remICS(S.reminders||[]),blob=new Blob([ics],{type:"text/calendar"}),u=URL.createObjectURL(blob),ln=document.createElement("a");ln.href=u;ln.download="hunter-reminders.ics";document.body.appendChild(ln);ln.click();setTimeout(function(){URL.revokeObjectURL(u);ln.remove();},800);toast("Reminders","Open the downloaded file to add them to your calendar.");play("notify");}
   else if(a==="rankall")rankAllQuests();
   else if(a==="manopen"){if(view.manualPrompt)openClaude(view.manualPrompt);toast("Ask Claude","Question copied. Paste it in Claude if needed.");}
   else if(a==="manpaste"){readClip(function(t){var ta=document.getElementById("manreply");if(t&&ta){ta.value=t;var bt=document.querySelector('[data-a="manparse"]');if(bt)handleAction(bt);}});}
