@@ -2674,7 +2674,7 @@ function entryForm(item){
 }
 function bdayForm(){
   play("open");
-  openModal('<span class="tag">Birthday</span><form id="yf"><div class="field"><label for="y-name">Name</label><input id="y-name" maxlength="40" required placeholder="Najah"></div>'+
+  openModal('<span class="tag">Birthday</span><form id="yf"><div class="field"><label for="y-name">Name</label><input id="y-name" maxlength="40" required placeholder="e.g. Mum, Best friend"></div>'+
     '<div class="field"><label for="y-date">Date (year does not matter)</label><input id="y-date" type="date" required></div>'+
     '<div class="row"><button type="button" class="btn ghost" data-a="close">Cancel</button><button class="btn primary" type="submit">Save</button></div></form>');
   document.getElementById("yf").addEventListener("submit",function(ev){
