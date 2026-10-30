@@ -619,7 +619,7 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 /* ---------- Config ---------- */
 var STATS=["STR","VIT","AGI","INT","WIL","SPI"];
 var STAT_NAMES={STR:"Strength",VIT:"Vitality",AGI:"Agility",INT:"Intellect",WIL:"Willpower",SPI:"Spirit"};
-var STAT_HINT={STR:"strength training, physical work",VIT:"sleep, water, food, health",AGI:"Muay Thai, cardio, sport",INT:"reading, journaling, study",WIL:"discipline, focus, creating",SPI:"prayer, meditation, reflection"};
+var STAT_HINT={STR:"workouts, strength training, Muay Thai, martial arts",VIT:"rest, sleep, food, health, stretching, meditation",AGI:"cardio, running, sport",INT:"reading, journaling, studying, learning",WIL:"discipline, focus, deep work, creating content",SPI:"prayer, Quran, recitation, meditation, reflection, mind sculpting"};
 var RANKS=["E","D","C","B","A","S"];
 var RANK_XP={E:5,D:15,C:40,B:100,A:250,S:600};
 var GATE_XP={E:25,D:60,C:150,B:350,A:800,S:2000};
@@ -760,12 +760,12 @@ var LOOK_OPTS={
   build:{slim:"Slim",average:"Average",broad:"Broad"}
 };
 var STAT_WORDS={
-  SPI:["pray","prayer","solat","salah","subuh","zuhur","asar","maghrib","isyak","quran","mengaji","dhikr","zikir","meditat","gratitude","grateful","reflect","mosque","masjid","sedekah","charity","fast","puasa","tahajjud","dua","doa","mind sculpt","breath","mindful","spiritual","tadabbur"],
-  STR:["push","pull","squat","lift","gym","weight","strength","dumbbell","deadlift","bench","calisthen","abs","core","plank","dip","burpee","workout","resistance","kettlebell","muscle"],
-  AGI:["run","jog","cardio","muay","thai","box","kick","swim","cycl","bike","sprint","stretch","yoga","football","futsal","badminton","basketball","jump","skip","dance","hike","martial","shadow","footwork","flexib","mobility"],
-  VIT:["sleep","water","drink","eat","meal","vegetable","fruit","diet","sugar","vitamin","walk","steps","sun","skincare","brush","floss","shower","cook","breakfast","bed","nap","posture","hydrat","protein","doctor","health","teeth","junk"],
+  SPI:["pray","prayer","solat","salah","subuh","zuhur","asar","maghrib","isyak","quran","mengaji","dhikr","zikir","meditat","recit","surah","gratitude","grateful","reflect","mosque","masjid","sedekah","charity","fast","puasa","tahajjud","dua","doa","mind sculpt","breath","mindful","spiritual","tadabbur"],
+  STR:["push","pull","squat","lift","gym","weight","strength","dumbbell","deadlift","bench","calisthen","abs","core","plank","dip","burpee","workout","resistance","kettlebell","muscle","barbell","curl","press","lunge","raise","ppl","leg day","upper","lower body","muay","thai","martial","box","kick","sparring","bjj","jiu","karate","taekwondo","silat","mma","shadow","footwork","bag"],
+  AGI:["run","jog","cardio","swim","cycl","bike","sprint","football","futsal","badminton","basketball","tennis","volley","jump","skip","rope","dance","hike","sport","hiit","interval","climb"],
+  VIT:["sleep","water","drink","eat","meal","vegetable","fruit","diet","sugar","vitamin","walk","steps","sun","skincare","brush","floss","shower","cook","breakfast","bed","nap","posture","hydrat","protein","doctor","health","teeth","junk","rest","recover","stretch","yoga","flexib","mobility","massage","foam roll","relax"],
   INT:["read","book","study","learn","course","journal","write","writing","language","code","coding","program","revise","revision","exam","note","research","lecture","assignment","practice","piano","guitar","skill","podcast","vocab","math","class"],
-  WIL:["focus","deep work","no phone","screen","social media","discipline","cold","wake","early","content","video","edit","film","script","upload","youtube","create","clean","tidy","budget","save money","plan","quit","avoid","no ","limit","declutter","pomodoro","routine","channel","thumbnail"]
+  WIL:["focus","deep work","no phone","screen","social media","discipline","cold","wake","early","deep work","content","video","edit","film","script","upload","youtube","create","clean","tidy","budget","save money","plan","quit","avoid","no ","limit","declutter","pomodoro","routine","channel","thumbnail"]
 };
 
 /* ---------- Utils ---------- */
@@ -800,7 +800,7 @@ function notebookGates(t){
 }
 function seed(keep){
   var t=today();keep=keep||{};
-  return migrate({v:15,name:keep.name||"Hunter",created:t,ack:t,updatedAt:0,sound:keep.sound!==false,theme:"azure",
+  return migrate({v:16,name:keep.name||"Hunter",created:t,ack:t,updatedAt:0,sound:keep.sound!==false,theme:"azure",
     alloc:{},title:"",quests:notebookQuests(t),gates:notebookGates(t),log:{},bdays:keep.bdays||[],
     look:keep.look||null,rewards:keep.rewards||undefined,evalDay:keep.evalDay||0,
     bench:keep.bench?keep.bench.map(function(b){return {id:b.id,name:b.name,unit:b.unit,stat:b.stat,better:b.better,entries:[]};}):undefined,
@@ -822,7 +822,8 @@ function migrate(o){
   if(o.v===12){o.v=13;if(o.dungeon)o.dungeon.bosses=Math.max(o.dungeon.bosses||0,25);}
   if(o.v===13){var r0=seed({name:o.name,sound:o.sound,battle:{label:o.battle&&o.battle.label}});r0.fresh=true;r0.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate. Themes now unlock by rank and gold.";return r0;}
   if(o.v===14){o.v=15;o.bdays=[];}
-  if(o.v!==15){
+  if(o.v===15){o.v=16;var restat=function(x){if(!x||!x.name)return;var n=x.name.toLowerCase();if(x.stat==="AGI"&&/muay|martial|box|kick|sparr|silat|mma|karate|taekwondo|jiu/.test(n))x.stat="STR";else if(x.stat==="AGI"&&/stretch|yoga|mobil|flexib/.test(n))x.stat="VIT";};(o.quests||[]).forEach(restat);(o.bench||[]).forEach(restat);(o.gates||[]).forEach(restat);}
+  if(o.v!==16){
     // Older versions: fresh start as requested, with 1,000,000 gold to try the Armory. Keep name, birthdays, rewards, test list and settings.
     var f=seed({name:o.name,bdays:o.bdays,sound:o.sound,battle:o.battle,rewards:o.rewards,bench:o.bench,evalDay:o.evalDay});
     f.fresh=true;f.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate.";
@@ -844,7 +845,7 @@ function migrate(o){
     {id:uid(),name:"Max push-ups in one set",unit:"reps",stat:"STR",better:"up",entries:[]},
     {id:uid(),name:"Max pull-ups in one set",unit:"reps",stat:"STR",better:"up",entries:[]},
     {id:uid(),name:"Plank hold",unit:"sec",stat:"VIT",better:"up",entries:[]},
-    {id:uid(),name:"Muay Thai rounds, no rest",unit:"rounds",stat:"AGI",better:"up",entries:[]},
+    {id:uid(),name:"Muay Thai rounds, no rest",unit:"rounds",stat:"STR",better:"up",entries:[]},
     {id:uid(),name:"Pages read this week",unit:"pages",stat:"INT",better:"up",entries:[]}
   ];
   if(!o.battle)o.battle={label:"Battle",days:{},notes:{},past:[]};
@@ -1102,14 +1103,14 @@ function connect(){
       return ref.get().then(function(snap){
         dbRef=ref;
         var remote=snap.exists?snap.data():null;
-        if(remote&&remote.v===15&&S.fresh){if(adopt(remote)){render();checkDay();}}
+        if(remote&&remote.v===16&&S.fresh){if(adopt(remote)){render();checkDay();}}
         else if(remote&&remote.v!==9&&remote.v!==8&&remote.v!==7&&remote.v!==6){if(S.fresh){adopt(remote);save();render();}else flush();}
         else if(remote&&(remote.updatedAt||0)>(S.updatedAt||0)){if(adopt(remote)){render();checkDay();}}
         else if(!remote||(S.updatedAt||0)>(remote.updatedAt||0)){if(S.fresh)save();else flush();}
         syncLabel="Synced to your account";setFoot();
         ref.onSnapshot(function(s){
           var d=s.exists?s.data():null;
-          if(d&&(d.v>=6&&d.v<=15)&&(d.updatedAt||0)>(S.updatedAt||0)&&!s.metadata.hasPendingWrites){if(adopt(d))render();}
+          if(d&&(d.v>=6&&d.v<=16)&&(d.updatedAt||0)>(S.updatedAt||0)&&!s.metadata.hasPendingWrites){if(adopt(d))render();}
         },function(){});
       });
     });
@@ -2436,8 +2437,8 @@ function questForm(kind,item){
   }
   function askManual(nm){
     var A=document.getElementById("f-amt"),U=document.getElementById("f-unit");
-    var prompt=isG?"I use a habit tracker game. Rank this one-time GOAL by how big it is: \""+nm+"\". E: a day's work. D: a few days. C: a few weeks. B: a month or more. A: several months. S: a year-scale achievement. Also pick the stat it trains from STR (strength), VIT (health, sleep, food), AGI (martial arts, cardio, sport), INT (reading, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection).\n\nReply in exactly this format and nothing else:\nRank: C\nStat: WIL":
-      "I use a habit tracker game. Rank this daily habit by how hard it is to do every single day for an ordinary adult: \""+nm+(A&&A.value?" ("+A.value+" "+(U?U.value:"")+")":"")+"\". "+CL_SCALE+" Also pick the stat it trains from STR (strength), VIT (health, sleep, food), AGI (martial arts, cardio, sport), INT (reading, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection), and give the smallest mini version that takes under 2 minutes.\n\nReply in exactly this format and nothing else:\nRank: D\nStat: SPI\nMini: 1 minute";
+    var prompt=isG?"I use a habit tracker game. Rank this one-time GOAL by how big it is: \""+nm+"\". E: a day's work. D: a few days. C: a few weeks. B: a month or more. A: several months. S: a year-scale achievement. Also pick the stat it trains from STR (workouts, strength training, Muay Thai, martial arts), VIT (rest, sleep, food, health, stretching, meditation for rest), AGI (cardio, running, sport), INT (reading, journaling, studying, learning), WIL (discipline, focus, deep work, creating content), SPI (prayer, Quran, recitation, meditation, reflection, mind sculpting).\n\nReply in exactly this format and nothing else:\nRank: C\nStat: WIL":
+      "I use a habit tracker game. Rank this daily habit by how hard it is to do every single day for an ordinary adult: \""+nm+(A&&A.value?" ("+A.value+" "+(U?U.value:"")+")":"")+"\". "+CL_SCALE+" Also pick the stat it trains from STR (workouts, strength training, Muay Thai, martial arts), VIT (rest, sleep, food, health, stretching, meditation for rest), AGI (cardio, running, sport), INT (reading, journaling, studying, learning), WIL (discipline, focus, deep work, creating content), SPI (prayer, Quran, recitation, meditation, reflection, mind sculpting), and give the smallest mini version that takes under 2 minutes.\n\nReply in exactly this format and nothing else:\nRank: D\nStat: SPI\nMini: 1 minute";
     openClaude(prompt);
     sugg.innerHTML='<div class="manbox"><span>Question copied and Claude opened. Paste Claude\'s reply here:</span><button type="button" class="btn primary" id="manpaste">Paste Claude\'s reply</button><textarea id="manone" rows="3" placeholder="Or paste it here: Rank: C, Stat: STR, Mini: 1 set"></textarea><button type="button" class="btn sm" id="manapply">Apply</button></div>';
     document.getElementById("manpaste").addEventListener("click",function(){readClip(function(t){if(t){document.getElementById("manone").value=t;document.getElementById("manapply").click();}});});
@@ -2450,7 +2451,7 @@ function questForm(kind,item){
   function askClaude(){
     var nm=nameEl.value.trim();if(!nm)return;if(!SAMPLE){askManual(nm);return;}
     sugg.innerHTML='<span class="thinking"><span class="dots"><i></i><i></i><i></i></span>Asking Claude…</span>';
-    var prompt="A habit-tracking RPG has 6 stats: STR (strength training), VIT (sleep, water, food, health), AGI (martial arts, cardio, sport), INT (reading, journaling, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection). "+
+    var prompt="A habit-tracking RPG has 6 stats: STR (workouts, strength training, Muay Thai, martial arts), VIT (rest, sleep, food, health, stretching, meditation for rest), AGI (cardio, running, sport), INT (reading, journaling, studying, learning), WIL (discipline, focus, deep work, creating content), SPI (prayer, Quran, recitation, meditation, reflection, mind sculpting). "+
       (isG?"Classify this one-time GOAL: \""+nm+"\". Rank E-S by how big the goal is (E: a day's work, C: a few weeks, B: a month or more, A: several months, S: a year-scale achievement). Reply with only JSON: {\"stat\":\"WIL\",\"rank\":\"B\",\"reason\":\"under 12 words\"}":
       "Rank this daily HABIT by how hard it is to do every single day for an ordinary adult: \""+nm+(function(){var A=document.getElementById("f-amt"),U=document.getElementById("f-unit");return A&&A.value?" (current target: "+A.value+" "+(U?U.value:"")+")":"";})()+"\". Consider time, physical or mental intensity, and willpower needed. Scale: E trivial, under 5 min (drink water, make bed). D easy, 5-15 min (read 10 min, journal, 20 push-ups). C moderate, 15-30 min (20 min run, 3 strength sets, 30 min reading). B hard, 30-60 min or a full workout (5 km run, 45 min gym, 1 hour study block). A very hard, 1-2 hours or intense training (Muay Thai class with sparring, 10 km run, 2 hours deep work). S extreme, 2+ hours or a double session at max effort (gym plus Muay Thai the same day, 15-21 km run, 3 hours focused work or content production). Most daily habits should land D to B; reserve S for genuinely brutal days. Also give the smallest 'mini' version that takes under 2 minutes. Reply with only JSON: {\"stat\":\"SPI\",\"rank\":\"D\",\"mini\":\"1 minute\",\"reason\":\"under 12 words\"}");
     SAMPLE.json(prompt,{modelTier:"quick"}).then(function(r){
