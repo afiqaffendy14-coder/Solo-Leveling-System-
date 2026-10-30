@@ -183,6 +183,9 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .mansteps{margin:6px 0 12px;padding-left:20px;font-size:.86rem;line-height:1.5;color:var(--muted)}.mansteps b{color:var(--text)}
 #manreply,#manone{width:100%;margin:10px 0;font-family:inherit;font-size:.86rem;background:rgba(0,0,0,.4);color:var(--text);border:1px solid rgba(var(--g),.3);border-radius:6px;padding:8px 10px}
 .manbox{display:flex;flex-direction:column;gap:6px;width:100%;font-size:.8rem;color:var(--muted)}.manbox #manone{margin:0}.manbox .btn{align-self:flex-end}
+.tcost{color:var(--gold);display:inline-flex;align-items:center;gap:3px}
+.item.tlock .swatch{filter:grayscale(.7) brightness(.6)}.item.tlock .item-name{opacity:.7}
+.addpray{display:block;margin:10px 0 2px;font-size:.82rem}
 .rankall{display:inline-flex;align-items:center;gap:6px;margin:-4px 0 12px;font-size:.82rem}.rankall svg{width:14px;height:14px}
 .rklist{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
@@ -603,19 +606,19 @@ var ITEMS={
   potion:{name:"EXP Potion",desc:"1.5× EXP and gold for one day.",cost:400}
 };
 var THEMES={
-  azure:{name:"Azure System",sw:"linear-gradient(135deg,#2f6bff,#58c4ff)"},
-  jade:{name:"Jade Gate",sw:"linear-gradient(135deg,#14a078,#6ef0be)"},
-  crimson:{name:"Crimson Gate",sw:"linear-gradient(135deg,#c8143c,#ff5c78)"},
-  violet:{name:"Shadow Violet",sw:"linear-gradient(135deg,#6e32e6,#ba8cff)"},
-  abyss:{name:"Abyss",sw:"linear-gradient(135deg,#5a0a14,#ff4646)"},
-  gold:{name:"Sovereign Gold",sw:"linear-gradient(135deg,#d69614,#ffd66e)"},
-  obsidian:{name:"Obsidian",sw:"linear-gradient(135deg,#000,#1a1a1f 60%,#e8e8ee)"},
-  ember:{name:"Ember",sw:"linear-gradient(135deg,#050302,#2a0f04 50%,#ff7a1a)"},
-  neon:{name:"Neon Rift",sw:"linear-gradient(135deg,#06020a,#3a0a40 50%,#ff3df2)"},
-  toxic:{name:"Toxic",sw:"linear-gradient(135deg,#030603,#0f2a08 50%,#9dff2e)"},
-  sakura:{name:"Night Sakura",sw:"linear-gradient(135deg,#0a0408,#3a1428 50%,#ff8fc7)"},
-  blackice:{name:"Black Ice",sw:"linear-gradient(135deg,#010307,#0a2030 50%,#7ff6ff)"},
-  bloodmoon:{name:"Blood Moon",sw:"linear-gradient(135deg,#000,#300004 55%,#ff1f3d)"}
+  azure:{name:"Azure System",cost:0,req:"E",sw:"linear-gradient(135deg,#2f6bff,#58c4ff)"},
+  jade:{name:"Jade Gate",cost:2000,req:"D",sw:"linear-gradient(135deg,#14a078,#6ef0be)"},
+  crimson:{name:"Crimson Gate",cost:6000,req:"C",sw:"linear-gradient(135deg,#c8143c,#ff5c78)"},
+  violet:{name:"Shadow Violet",cost:15000,req:"B",sw:"linear-gradient(135deg,#6e32e6,#ba8cff)"},
+  ember:{name:"Ember",cost:15000,req:"B",sw:"linear-gradient(135deg,#050302,#2a0f04 50%,#ff7a1a)"},
+  toxic:{name:"Toxic",cost:15000,req:"B",sw:"linear-gradient(135deg,#030603,#0f2a08 50%,#9dff2e)"},
+  abyss:{name:"Abyss",cost:30000,req:"A",sw:"linear-gradient(135deg,#5a0a14,#ff4646)"},
+  gold:{name:"Sovereign Gold",cost:30000,req:"A",sw:"linear-gradient(135deg,#d69614,#ffd66e)"},
+  obsidian:{name:"Obsidian",cost:30000,req:"A",sw:"linear-gradient(135deg,#000,#1a1a1f 60%,#e8e8ee)"},
+  neon:{name:"Neon Rift",cost:30000,req:"A",sw:"linear-gradient(135deg,#06020a,#3a0a40 50%,#ff3df2)"},
+  sakura:{name:"Night Sakura",cost:30000,req:"A",sw:"linear-gradient(135deg,#0a0408,#3a1428 50%,#ff8fc7)"},
+  blackice:{name:"Black Ice",cost:60000,req:"S",sw:"linear-gradient(135deg,#010307,#0a2030 50%,#7ff6ff)"},
+  bloodmoon:{name:"Blood Moon",cost:120000,req:"SS",sw:"linear-gradient(135deg,#000,#300004 55%,#ff1f3d)"}
 };
 var THEME_GLOW={azure:"#58c4ff",jade:"#6ef0be",crimson:"#ff5c78",violet:"#ba8cff",gold:"#ffd66e",abyss:"#ff4646",obsidian:"#e8e8ee",ember:"#ff7a1a",neon:"#ff3df2",toxic:"#9dff2e",sakura:"#ff8fc7",blackice:"#7ff6ff",bloodmoon:"#ff1f3d"};
 var GEAR=[
@@ -756,32 +759,22 @@ function rankOK(req,lvl){return !req||lvl>=RANK_AT[req];}
 /* ---------- State ---------- */
 function notebookQuests(t){
   return [
-    {id:uid(),name:"Subuh",group:"prayer",stat:"SPI",rank:"E",created:t},
-    {id:uid(),name:"Zuhur",group:"prayer",stat:"SPI",rank:"E",created:t},
-    {id:uid(),name:"Asar",group:"prayer",stat:"SPI",rank:"E",created:t},
-    {id:uid(),name:"Maghrib",group:"prayer",stat:"SPI",rank:"E",created:t},
-    {id:uid(),name:"Isyak",group:"prayer",stat:"SPI",rank:"E",created:t},
-    {id:uid(),name:"Mind Sculpt 10 min",mini:"1 min",stat:"SPI",rank:"D",created:t},
-    {id:uid(),name:"Journal 3 sentences",mini:"1 sentence",stat:"INT",rank:"D",created:t},
-    {id:uid(),name:"Read 10 min",mini:"1 min",stat:"INT",rank:"D",created:t},
-    {id:uid(),name:"Muay Thai: 5 move sets",mini:"1 move set",stat:"AGI",rank:"C",created:t},
-    {id:uid(),name:"Strength: 5 move sets",mini:"1 set",stat:"STR",rank:"C",created:t},
-    {id:uid(),name:"Content creation 10 min",mini:"1 step of the CC process",stat:"WIL",rank:"C",created:t}
+    {id:uid(),name:"Push-ups",mini:"5 push-ups",stat:"STR",rank:"D",created:t,lastUp:t,tier:1,amt:20,step:2,unit:"reps",progStart:t}
   ];
 }
+function prayerQuests(t){return ["Subuh","Zuhur","Asar","Maghrib","Isyak"].map(function(n){return {id:uid(),name:n,group:"prayer",stat:"SPI",rank:"E",created:t};});}
 function notebookGates(t){
   return [
-    {id:uid(),name:"Upload my next YouTube video",stat:"WIL",rank:"B",created:t,done:""},
-    {id:uid(),name:"All 5 prayers on time for 30 days",stat:"SPI",rank:"A",created:t,done:""}
+    {id:uid(),name:"Run 5 km without stopping",stat:"AGI",rank:"C",created:t,done:""}
   ];
 }
 function seed(keep){
   var t=today();keep=keep||{};
-  return migrate({v:13,name:keep.name||"Hunter",created:t,ack:t,updatedAt:0,sound:keep.sound!==false,theme:"azure",
+  return migrate({v:14,name:keep.name||"Hunter",created:t,ack:t,updatedAt:0,sound:keep.sound!==false,theme:"azure",
     alloc:{},title:"",quests:notebookQuests(t),gates:notebookGates(t),log:{},bdays:keep.bdays||[],
     look:keep.look||null,rewards:keep.rewards||undefined,evalDay:keep.evalDay||0,
     bench:keep.bench?keep.bench.map(function(b){return {id:b.id,name:b.name,unit:b.unit,stat:b.stat,better:b.better,entries:[]};}):undefined,
-    battle:{label:(keep.battle&&keep.battle.label)||"Battle",days:{},notes:{},past:[{m:"2026-08",w:20,n:31},{m:"2026-09",w:13,n:30}]}});
+    battle:{label:(keep.battle&&keep.battle.label)||"Battle",days:{},notes:{},past:[]}});
 }
 function migrate(o){
   if(!o||!Array.isArray(o.quests)||!o.log)return null;
@@ -797,17 +790,18 @@ function migrate(o){
     var full={footman:9,archer:15,assassin:12,lancer:10,knight:10,mage:8,monk:8,wolf:8,berserker:6,giant:4,wyvern:3,marshal:1,dancer:1,ashen:1,valkyrie:1,archmage:1,behemoth:1,skydragon:1};Object.keys(full).forEach(function(k){o.army[k]=Math.max(o.army[k]||0,full[k]);});
     o.shTier=o.shTier||{};o.migratedNote="System update: gold maxed, all 4 bosses cleared with their drops and shadows, a full 100-shadow army, and 999 dungeon keys. Evolve shadows in Dungeon › Shadows. Every item now shows its stats.";}
   if(o.v===12){o.v=13;if(o.dungeon)o.dungeon.bosses=Math.max(o.dungeon.bosses||0,25);}
-  if(o.v!==13){
+  if(o.v===13){var r0=seed({name:o.name,sound:o.sound,bdays:o.bdays,battle:{label:o.battle&&o.battle.label}});r0.fresh=true;r0.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate. Themes now unlock by rank and gold.";return r0;}
+  if(o.v!==14){
     // Older versions: fresh start as requested, with 1,000,000 gold to try the Armory. Keep name, birthdays, rewards, test list and settings.
     var f=seed({name:o.name,bdays:o.bdays,sound:o.sound,battle:o.battle,rewards:o.rewards,bench:o.bench,evalDay:o.evalDay});
-    f.fresh=true;f.bonusGold=1000000;f.unlockAll=true;f.migratedNote="Fresh start. Progress is back to zero, and you have 1,000,000 gold to try the Armory.";
+    f.fresh=true;f.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate.";
     return f;
   }
   if(!o.alloc)o.alloc={};
   STATS.forEach(function(s){if(o.alloc[s]==null)o.alloc[s]=0;});
   if(!o.purchases)o.purchases=[];
   if(!o.themes)o.themes=["azure"];
-  if(!o.theme||o.theme==="ghost")o.theme="azure";o.themes=Object.keys(THEMES);
+  if(!o.theme||o.theme==="ghost")o.theme="azure";if(!o.themes||!o.themes.length)o.themes=["azure"];if(o.themes.indexOf(o.theme)<0)o.theme="azure";
   if(o.sound===undefined)o.sound=true;
   if(!o.rewards)o.rewards=[
     {id:uid(),name:"1 hour of gaming",cost:400},
@@ -1077,14 +1071,14 @@ function connect(){
       return ref.get().then(function(snap){
         dbRef=ref;
         var remote=snap.exists?snap.data():null;
-        if(remote&&remote.v===13&&S.fresh){if(adopt(remote)){render();checkDay();}}
+        if(remote&&remote.v===14&&S.fresh){if(adopt(remote)){render();checkDay();}}
         else if(remote&&remote.v!==9&&remote.v!==8&&remote.v!==7&&remote.v!==6){if(S.fresh){adopt(remote);save();render();}else flush();}
         else if(remote&&(remote.updatedAt||0)>(S.updatedAt||0)){if(adopt(remote)){render();checkDay();}}
         else if(!remote||(S.updatedAt||0)>(remote.updatedAt||0)){if(S.fresh)save();else flush();}
         syncLabel="Synced to your account";setFoot();
         ref.onSnapshot(function(s){
           var d=s.exists?s.data():null;
-          if(d&&(d.v>=6&&d.v<=13)&&(d.updatedAt||0)>(S.updatedAt||0)&&!s.metadata.hasPendingWrites){if(adopt(d))render();}
+          if(d&&(d.v>=6&&d.v<=14)&&(d.updatedAt||0)>(S.updatedAt||0)&&!s.metadata.hasPendingWrites){if(adopt(d))render();}
         },function(){});
       });
     });
@@ -1726,6 +1720,7 @@ function tabQuests(){
     else if(!daily.length)h+='<p class="empty">No daily quests yet.</p>';
     h+='<ul class="quest-list">'+todo.map(function(q){return questRow(q,"q");}).join("")+'</ul>';
   }else h+=done.length?'<ul class="quest-list">'+done.map(function(q){return questRow(q,"q");}).join("")+'</ul>':'<p class="empty">Nothing cleared yet today.</p>';
+  if(!S.quests.some(isPrayer))h+='<button class="link addpray" data-a="addprayers">+ Add the 5 daily prayers</button>';
   var offT=S.quests.filter(function(q){return !q.archived&&q.created<=t&&!onDay(q,t);});
   if(offT.length)h+='<div class="offday"><span class="sub">Not scheduled today:</span>'+offT.map(function(q){return '<button class="offq" data-a="editq" data-id="'+q.id+'">'+esc(q.name)+'<small>'+DOW_ORDER.filter(function(d){return q.days.indexOf(d)>=0;}).map(function(d){return DOW[d];}).join(" ")+'</small></button>';}).join("")+'</div>';
   h+='<div class="clear-line"><span class="sub"><b>'+allDone+'/'+allReq.length+'</b> done today</span><span style="display:flex;gap:8px;flex-wrap:wrap">';
@@ -1858,11 +1853,11 @@ function tabStore(){
   });
   h+='</div></section>';
 
-  h+='<section class="win"><div class="win-h"><span class="tag">Window Themes</span><span class="sub">All unlocked</span><button class="btn sm'+(S.matchTheme?' primary':' ghost')+'" data-a="matchtheme" aria-pressed="'+!!S.matchTheme+'">Match outfit '+(S.matchTheme?'ON':'OFF')+'</button></div><div class="shop">';
+  h+='<section class="win"><div class="win-h"><span class="tag">Window Themes</span><button class="btn sm'+(S.matchTheme?' primary':' ghost')+'" data-a="matchtheme" aria-pressed="'+!!S.matchTheme+'">Match outfit '+(S.matchTheme?'ON':'OFF')+'</button></div><div class="shop">';
   Object.keys(THEMES).forEach(function(k){
-    var th=THEMES[k],owned=true,locked=false,act=S.theme===k;
-    h+='<div class="item"><div class="swatch" style="background:'+th.sw+'"></div><div><div class="item-name"><span class="rkb inl rk-'+THEME_RANK[k]+'">'+THEME_RANK[k]+'</span>'+th.name+'</div><div class="item-desc">'+(act?'Active':'Tap to use')+'</div></div>'+
-      '<div class="price">'+(owned?(act?'':'<button class="btn sm" data-a="usetheme" data-id="'+k+'">Use</button>'):'<span>'+coin()+th.cost+'</span><button class="btn goldb sm" data-a="buyt" data-id="'+k+'"'+(R.gold<th.cost||locked?' disabled':'')+'>Buy</button>')+'</div></div>';
+    var th=THEMES[k],owned=S.themes.indexOf(k)>=0||!th.cost,locked=!rankOK(th.req,R.lvl),act=S.theme===k;
+    h+='<div class="item'+(locked&&!owned?' tlock':'')+'"><div class="swatch" style="background:'+th.sw+'"></div><div><div class="item-name"><span class="rkb inl rk-'+THEME_RANK[k]+'">'+THEME_RANK[k]+'</span>'+th.name+'</div><div class="item-desc">'+(act?'Active':owned?'Owned':'<span class="tcost">'+coin()+th.cost.toLocaleString()+'</span>'+(locked?' · needs '+th.req+'-rank (level '+RANK_AT[th.req]+')':''))+'</div></div>'+
+      '<div class="price">'+(owned?(act?'':'<button class="btn sm" data-a="usetheme" data-id="'+k+'">Use</button>'):'<button class="btn goldb sm" data-a="buyt" data-id="'+k+'"'+(R.gold<th.cost||locked?' disabled':'')+'>'+(locked?'Locked':'Buy')+'</button>')+'</div></div>';
   });
   h+='</div></section>';
   var hist=S.purchases.slice(-6).reverse();
@@ -2697,6 +2692,7 @@ function handleAction(b){
   else if(a==="addpast"){play("open");openModal('<span class="tag">Past month</span><p>Copy a month from your notebook.</p><div class="grid2"><div class="field"><label for="pm">Month</label><input id="pm" type="month" max="'+mkey(t)+'" required></div><div class="field"><label for="pw">Wins</label><input id="pw" type="number" min="0" max="31" required></div></div><div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary" data-a="savepast">Save</button></div>');}
   else if(a==="savepast"){var pm=document.getElementById("pm").value,pw=parseInt(document.getElementById("pw").value,10);if(!pm||isNaN(pw))return;S.battle.past=S.battle.past.filter(function(p){return p.m!==pm;});S.battle.past.push({m:pm,w:Math.min(pw,daysIn(pm)),n:daysIn(pm)});save();closeModal();render();play("notify");}
   else if(a==="alloc"){if(!R||R.points<1)return;var s=b.getAttribute("data-s");S.alloc[s]=(S.alloc[s]||0)+1;save();render();play("complete");toast("System",STAT_NAMES[s]+" +1");}
+  else if(a==="addprayers"){var bp=derive();S.quests=prayerQuests(today()).concat(S.quests);afterChange(bp,"System","Prayers panel added.","notify");}
   else if(a==="rankall")rankAllQuests();
   else if(a==="manopen"){if(view.manualPrompt)openClaude(view.manualPrompt);toast("Ask Claude","Question copied. Paste it in Claude if needed.");}
   else if(a==="manparse"){var rt=(document.getElementById("manreply")||{}).value||"",qs2=view.manualQs||[],out2=[];
@@ -2758,9 +2754,10 @@ function handleAction(b){
   else if(a==="buyr2"){var rw2=find(S.rewards,id);if(rw2)purchase("reward",id,rw2.name,rw2.cost);}
   else if(a==="buyi")confirmBuy(ITEMS[id].name,ITEMS[id].cost,"buyi2",id);
   else if(a==="buyi2")purchase("item",id,ITEMS[id].name,ITEMS[id].cost);
+  else if(a==="buyt"&&!rankOK(THEMES[id].req,R.lvl))return;
   else if(a==="buyt")confirmBuy(THEMES[id].name+" theme",THEMES[id].cost,"buyt2",id);
   else if(a==="buyt2"){if(purchase("theme",id,THEMES[id].name+" theme",THEMES[id].cost)){S.themes.push(id);S.theme=id;save();render();}}
-  else if(a==="usetheme"){S.theme=id;save();render();play("open");}
+  else if(a==="usetheme"){if(S.themes.indexOf(id)<0&&THEMES[id].cost)return;S.theme=id;save();render();play("open");}
   else if(a==="usepotion"){if(R.potions<1)return;before=derive();S.log[t]=S.log[t]||{};S.log[t]._boost=true;flash();afterChange(before,"EXP Potion","1.5× EXP and gold for the rest of today.","shield");}
   else if(a==="refund"){
     var p=S.purchases[S.purchases.length-1];if(!p||p.d!==t)return;
