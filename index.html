@@ -793,7 +793,7 @@ function notebookGates(t){
 }
 function seed(keep){
   var t=today();keep=keep||{};
-  return migrate({v:14,name:keep.name||"Hunter",created:t,ack:t,updatedAt:0,sound:keep.sound!==false,theme:"azure",
+  return migrate({v:15,name:keep.name||"Hunter",created:t,ack:t,updatedAt:0,sound:keep.sound!==false,theme:"azure",
     alloc:{},title:"",quests:notebookQuests(t),gates:notebookGates(t),log:{},bdays:keep.bdays||[],
     look:keep.look||null,rewards:keep.rewards||undefined,evalDay:keep.evalDay||0,
     bench:keep.bench?keep.bench.map(function(b){return {id:b.id,name:b.name,unit:b.unit,stat:b.stat,better:b.better,entries:[]};}):undefined,
@@ -813,8 +813,9 @@ function migrate(o){
     var full={footman:9,archer:15,assassin:12,lancer:10,knight:10,mage:8,monk:8,wolf:8,berserker:6,giant:4,wyvern:3,marshal:1,dancer:1,ashen:1,valkyrie:1,archmage:1,behemoth:1,skydragon:1};Object.keys(full).forEach(function(k){o.army[k]=Math.max(o.army[k]||0,full[k]);});
     o.shTier=o.shTier||{};o.migratedNote="System update: gold maxed, all 4 bosses cleared with their drops and shadows, a full 100-shadow army, and 999 dungeon keys. Evolve shadows in Dungeon › Shadows. Every item now shows its stats.";}
   if(o.v===12){o.v=13;if(o.dungeon)o.dungeon.bosses=Math.max(o.dungeon.bosses||0,25);}
-  if(o.v===13){var r0=seed({name:o.name,sound:o.sound,bdays:o.bdays,battle:{label:o.battle&&o.battle.label}});r0.fresh=true;r0.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate. Themes now unlock by rank and gold.";return r0;}
-  if(o.v!==14){
+  if(o.v===13){var r0=seed({name:o.name,sound:o.sound,battle:{label:o.battle&&o.battle.label}});r0.fresh=true;r0.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate. Themes now unlock by rank and gold.";return r0;}
+  if(o.v===14){o.v=15;o.bdays=[];}
+  if(o.v!==15){
     // Older versions: fresh start as requested, with 1,000,000 gold to try the Armory. Keep name, birthdays, rewards, test list and settings.
     var f=seed({name:o.name,bdays:o.bdays,sound:o.sound,battle:o.battle,rewards:o.rewards,bench:o.bench,evalDay:o.evalDay});
     f.fresh=true;f.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate.";
@@ -1094,14 +1095,14 @@ function connect(){
       return ref.get().then(function(snap){
         dbRef=ref;
         var remote=snap.exists?snap.data():null;
-        if(remote&&remote.v===14&&S.fresh){if(adopt(remote)){render();checkDay();}}
+        if(remote&&remote.v===15&&S.fresh){if(adopt(remote)){render();checkDay();}}
         else if(remote&&remote.v!==9&&remote.v!==8&&remote.v!==7&&remote.v!==6){if(S.fresh){adopt(remote);save();render();}else flush();}
         else if(remote&&(remote.updatedAt||0)>(S.updatedAt||0)){if(adopt(remote)){render();checkDay();}}
         else if(!remote||(S.updatedAt||0)>(remote.updatedAt||0)){if(S.fresh)save();else flush();}
         syncLabel="Synced to your account";setFoot();
         ref.onSnapshot(function(s){
           var d=s.exists?s.data():null;
-          if(d&&(d.v>=6&&d.v<=14)&&(d.updatedAt||0)>(S.updatedAt||0)&&!s.metadata.hasPendingWrites){if(adopt(d))render();}
+          if(d&&(d.v>=6&&d.v<=15)&&(d.updatedAt||0)>(S.updatedAt||0)&&!s.metadata.hasPendingWrites){if(adopt(d))render();}
         },function(){});
       });
     });
@@ -2500,36 +2501,21 @@ function showRankProposal(out){
     openModal('<span class="tag">Claude ranking</span><h2>'+(ch?ch+' rank change'+(ch>1?'s':'')+' suggested':'Your ranks look right')+'</h2><ul class="rklist">'+out.map(function(x){var d=x.from!==x.rank;return '<li class="'+(d?'chg':'')+'"><div><b>'+esc(x.name)+'</b><small>'+esc(x.why)+'</small></div><span class="rkto"><i class="r-'+x.from+'">'+x.from+'</i>'+(d?'→<i class="r-'+x.rank+'">'+x.rank+'</i>':'')+'</span><span class="sub">+'+RANK_XP[x.rank]+' XP · +'+goldFor(x.rank,RANK_XP[x.rank])+' G</span></li>';}).join("")+'</ul><div class="row"><button class="btn ghost grow" data-a="close">Keep mine</button>'+(ch?'<button class="btn primary" data-a="applyranks">Apply</button>':'')+'</div>');
 }
 var TOUR=[
-  {c:"Welcome",t:"Welcome, Hunter",x:"This app turns your real habits into a game. You do the habit in real life, tick it here, and your hunter gets stronger. This quick tour shows you every part. Tap Next to start."},
-  {c:"Basics",tab:"quests",s:".hdr .lvl",t:"Your level",x:"This is your level. You start at 1. Every few levels you go up a rank, from E all the way to SSS."},
-  {c:"Basics",tab:"quests",s:".xp",t:"EXP bar",x:"Finishing habits gives EXP. When this bar fills up, you level up."},
-  {c:"Basics",tab:"quests",s:".chip.gold",t:"Gold",x:"Habits also give gold. You spend it in the Store on gear, themes and your own real-life rewards."},
-  {c:"Basics",tab:"quests",s:".chips .chip:nth-child(2)",t:"Streak",x:"How many days in a row you finished every quest. Finishing them all in a day also gives bonus EXP."},
-  {c:"Basics",tab:"quests",s:".chip.red",t:"Hearts",x:"You get 3 hearts each month. Missed a day? A heart lets you make up for it the next day with a make-up quest, so your streak survives."},
-  {c:"Quests",tab:"quests",s:"li.q .check",t:"Tick it off",x:"A quest is a daily habit. When you've done it, tap this box. That's it."},
-  {c:"Quests",tab:"quests",s:"li.q .mini-sq",t:"MINI",x:"Busy day? Do the tiny version shown under the quest name and tap MINI instead. You get half the reward, and it still counts."},
-  {c:"Quests",tab:"quests",s:"li.q .q-xp",t:"Rewards",x:"What this quest pays: EXP on top, gold below. Harder ranks pay a lot more, so a tough habit is worth it."},
-  {c:"Quests",tab:"quests",s:"li.q .q-main",t:"Edit a quest",x:"Tap the name to change it. Here you set its rank (difficulty), the stat it trains, a weekly increase like +2 reps a week, and which days it shows with a checklist for each day."},
-  {c:"Quests",tab:"quests",s:".rankall",t:"Ask Claude",x:"Not sure how hard a habit is? Tap here. Claude opens with the question ready. Copy its answer, come back, and tap Paste Claude's reply."},
-  {c:"Quests",tab:"quests",s:"[data-a=addq]",t:"Add your habits",x:"Add your own habits here. Start small. You can always make them harder later."},
-  {c:"Quests",tab:"quests",s:"[data-a=rest]",t:"Rest day",x:"Planned day off, or sick? Tap Rest day and today won't break your streak or cost you EXP."},
-  {c:"Quests",tab:"quests",sec:"Gates",t:"Gates",x:"Gates are big one-time goals, like running your first 5 km. Tick one when you achieve it for a big reward."},
-  {c:"Quests",tab:"quests",s:".addpray",t:"Prayers",x:"Tap this to add the 5 daily prayers. They get their own panel where you mark each one on time or late."},
-  {c:"Quests",tab:"quests",s:"[data-a=notes]",t:"Notifications",x:"Important things show up here: level ups, new titles, missed days and boss wins."},
-  {c:"Battle",tab:"battle",s:"#app section.win",t:"Battle",x:"Use this for a habit you're trying to quit. Each day, tap Victory if you stayed clean or Not today if you slipped. Rename it to whatever you're fighting."},
-  {c:"Hunter",tab:"hunter",sec:"Hunter",t:"Your hunter",x:"This is you. Power shows how strong you are overall. It goes up with your level, stats, gear and shadow army."},
-  {c:"Hunter",tab:"hunter",s:"[data-a=customize]",t:"Change your look",x:"Customize changes your body and face. Wardrobe takes you to the Store to change gear."},
-  {c:"Hunter",tab:"hunter",sec:"Stats",t:"Stats",x:"Six stats: Strength, Vitality, Agility, Intelligence, Willpower and Spirit. Each quest trains one. Every level up gives you a point to add with the + button."},
-  {c:"Hunter",tab:"hunter",sec:"Real-World Tests",t:"Real-world tests",x:"Every week, test yourself for real, like max push-ups or plank time, and log it. Then you can see actual progress, not just game numbers."},
-  {c:"Hunter",tab:"hunter",sec:"Titles",t:"Titles",x:"Reach milestones to earn titles. Tap one to wear it under your name. You can wear up to 3."},
-  {c:"Dungeon",tab:"dungeon",s:".dsegs",t:"Dungeon",x:"Unlocks at level 10. Finishing quests earns keys, and each key is one fight. Shadows is your army and Skills are powers you equip for fights."},
-  {c:"Store",tab:"store",s:".slotnav",t:"Armory",x:"Buy gear for your hunter here. Each item shows its rank and stats. Higher-rank gear needs a higher hunter rank."},
-  {c:"Store",tab:"store",sec:"My Rewards",t:"Real rewards",x:"Add real-life treats, like a movie night or new shoes, with a gold price. Earn the gold, then buy them guilt-free."},
-  {c:"Store",tab:"store",sec:"Items",t:"Items",x:"A Streak Shield saves your streak when you have no hearts left. An EXP Potion gives 1.5× rewards for one day."},
-  {c:"Store",tab:"store",sec:"Window Themes",t:"Themes",x:"Change the app's colours. Each theme needs a certain rank and costs gold."},
-  {c:"Stats",tab:"insights",s:"#app section.win",t:"Your progress",x:"Charts and a monthly report of how you're doing, plus tips from the System on what to improve."},
-  {c:"Settings",tab:"quests",s:".hdr .icons [data-a=settings]",t:"Settings",x:"Change your name and sounds, back up your progress, and replay this tour any time."},
-  {c:"Done",t:"You're ready",x:"Start with one or two habits you can do every day. Tick them, keep your streak, and watch your hunter grow. Good luck, Hunter."}
+  {c:"Welcome",t:"Quick tour",x:"Most of this app explains itself. This tour only covers the parts that aren't obvious. It takes about a minute."},
+  {c:"Basics",tab:"quests",s:".hdr .rank",t:"Ranks",x:"Levels raise your rank: E, D, C, B, A, S, SS and SSS. Higher ranks unlock better gear, themes and dungeon perks."},
+  {c:"Basics",tab:"quests",s:".chip.red",t:"Hearts",x:"Clear every quest in a day to keep your streak. Missed a day? You get 3 hearts a month. The next day you'll get a make-up quest, and doing it saves your streak."},
+  {c:"Quests",tab:"quests",s:"li.q .mini-sq",t:"MINI",x:"On a bad day, do the tiny version written under the quest name and tap MINI. Half the reward, but your streak stays alive."},
+  {c:"Quests",tab:"quests",s:"li.q .q-main",t:"Tap the name to edit",x:"Inside: the rank (how hard it is), a weekly increase like +2 reps every 7 days, and which days it shows up with a checklist for each day, like a gym split."},
+  {c:"Quests",tab:"quests",s:".rankall",t:"Ask Claude",x:"Claude opens with the question already written. Copy Claude's answer, come back, and tap Paste Claude's reply. The ranks fill in for you."},
+  {c:"Quests",tab:"quests",s:"[data-a=rest]",t:"Rest day",x:"Taking a planned day off or feeling sick? Tap this before the day ends and you won't lose your streak or any EXP."},
+  {c:"Quests",tab:"quests",sec:"Gates",t:"Gates",x:"Big one-time goals, not daily habits. Tick one only when you've fully achieved it. They pay a lot."},
+  {c:"Battle",tab:"battle",s:"#app section.win",t:"Battle",x:"For a habit you're quitting. Each day, mark whether you stayed clean. Tap Rename to name what you're fighting."},
+  {c:"Hunter",tab:"hunter",sec:"Stats",t:"Stats",x:"Each quest trains one stat, so doing quests raises it. You also get 1 point every level up. Tap + to spend it."},
+  {c:"Hunter",tab:"hunter",sec:"Real-World Tests",t:"Real-world tests",x:"Once a week, test yourself for real, like max push-ups, and log the number. This shows your actual progress outside the game."},
+  {c:"Dungeon",tab:"dungeon",s:".dsegs",t:"Dungeon",x:"Opens at level 10. You earn keys by doing quests, and each key is one fight. Your stats, gear, skills and shadow army decide if you win."},
+  {c:"Store",tab:"store",sec:"My Rewards",t:"Real rewards",x:"Add real treats with a gold price, like a movie night. Only buy them with gold you've earned."},
+  {c:"Store",tab:"store",sec:"Items",t:"Streak Shield",x:"If you miss a day with no hearts left, a Streak Shield saves your streak automatically. Worth keeping one."},
+  {c:"Settings",tab:"quests",s:".hdr .icons [data-a=settings]",t:"Settings",x:"Replay this tour here any time. On the offline app your progress lives on your phone, so export a backup here now and then."}
 ];
 function tourEl(st){if(st.sec){var tags=document.querySelectorAll("#app section .tag");for(var i=0;i<tags.length;i++)if(tags[i].textContent.trim()===st.sec)return tags[i].closest("section");return null;}return st.s?document.querySelector(st.s):null;}
 function tourEnd(){var o=document.getElementById("tour");if(o)o.remove();if(!S.tourDone){S.tourDone=1;save();}document.body.classList.remove("touring");}
