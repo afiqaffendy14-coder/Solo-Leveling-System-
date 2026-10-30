@@ -220,6 +220,12 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .rklist{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
 .rklist b{font-size:.88rem}.rklist small{display:block;font-size:.72rem;color:var(--muted)}.rkto{font-family:var(--display);display:flex;gap:4px;align-items:center;grid-row:span 2}.rkto i{font-style:normal;font-weight:700}.rklist .sub{font-size:.7rem}
+.setsrow{display:grid;grid-template-columns:70px auto 1fr;gap:8px;align-items:center}.setsrow input{min-width:0}.setsrow span{color:var(--muted);font-size:.85rem}
+.qsets{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;padding:10px 4px 2px;border-top:1px solid rgba(var(--g),.12)}
+.qs-l{font-family:var(--display);font-size:.78rem;letter-spacing:.06em;color:var(--glow)}.qs-l small{color:var(--muted);font-family:inherit;letter-spacing:0}
+.qs-p{display:flex;flex-wrap:wrap;gap:6px}
+.qs-b{min-width:38px;height:38px;border-radius:8px;border:1.5px solid rgba(var(--g),.5);background:rgba(0,0,0,.3);color:var(--muted);font-family:var(--display);font-weight:700;font-size:.9rem;padding:0 8px}
+.qs-b.on{background:var(--glow);border-color:var(--glow);color:#04060c;box-shadow:0 0 10px rgba(var(--g),.45)}
 .plan{grid-column:1/-1;margin:2px 0 0;padding:10px 4px 2px;border-top:1px solid rgba(var(--g),.12);display:flex;flex-direction:column;gap:3px}
 .plan-h{font-family:var(--display);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--glow);margin:2px 0}
 .plan-i{display:flex;gap:8px;align-items:center;text-align:left;background:none;border:0;padding:3px 0;color:var(--text);font-size:.84rem}
@@ -1681,6 +1687,11 @@ function render(){
 }
 function setFoot(){var el=document.getElementById("sync");if(el)el.textContent=syncLabel;}
 
+function setsHTML(q,skip,done){
+  if(skip||!q.sets)return "";var e=S.log[today()]||{},c=done?q.sets:Math.min(q.sets,e["_s:"+q.id]||0),h='<div class="qsets"><span class="qs-l">'+c+' / '+q.sets+(q.setLabel?' <small>× '+esc(q.setLabel)+'</small>':' sets')+'</span><div class="qs-p">';
+  for(var i=0;i<q.sets;i++)h+='<button class="qs-b'+(i<c?' on':'')+'" data-a="setpip" data-id="'+q.id+'" data-i="'+i+'"'+(done?' disabled':'')+' aria-label="Set '+(i+1)+'">'+(i+1)+'</button>';
+  return h+'</div></div>';
+}
 function planHTML(q,skip,done){
   if(skip)return "";var t=today(),L=planLines(q,t);if(!L)return "";var e=S.log[t]||{},ticks=e["_c:"+q.id]||[],n=0,c=0,h='<div class="plan">';
   L.forEach(function(l,i){if(l.charAt(0)==="#"){h+='<div class="plan-h">'+esc(l.replace(/^#+\s*/,""))+'</div>';return;}n++;var on=done||ticks.indexOf(i)>=0;if(on)c++;
@@ -1703,7 +1714,7 @@ function questRow(q,kind,opts){
   var mainClose=editable?'</button>':'</div>';
   var hasMini=!isR&&!done&&!isG&&q.mini;
   var acts='<div class="q-acts"><button class="check" data-a="'+act+'" data-id="'+q.id+'" aria-pressed="'+done+'" aria-label="'+(done?'Undo ':'Complete ')+esc(q.name)+'">'+CHECK+'</button>'+(hasMini?'<button class="mini-sq" data-a="mini" data-id="'+q.id+'" aria-label="Do the mini version: '+esc(q.mini)+'" title="Mini: '+esc(q.mini)+'"><span>MINI</span></button>':'')+'</div>';
-  return '<li class="q rk-'+q.rank+(done?' done':'')+(mini?' minidone':'')+'">'+acts+'<div>'+evo+mainOpen+'<div class="q-name">'+esc(q.name)+(q.amt!=null&&!isG&&!isR?' <span class="amt">'+fmtAmt(qAmount(q))+(q.unit?' '+esc(q.unit):'')+'</span>':'')+'</div><div class="q-meta">'+meta+'</div>'+(q.mini&&!isG&&!isR?'<div class="q-mini'+(mini?' on':'')+'"><b>MINI</b>'+esc(q.mini)+'</div>':'')+mainClose+'</div><span class="q-xp">+'+xp+'<small>XP</small><em>+'+goldFor(q.rank,xp)+' G</em></span>'+planHTML(q,isG||isR,done)+'</li>';
+  return '<li class="q rk-'+q.rank+(done?' done':'')+(mini?' minidone':'')+'">'+acts+'<div>'+evo+mainOpen+'<div class="q-name">'+esc(q.name)+(q.amt!=null&&!isG&&!isR?' <span class="amt">'+fmtAmt(qAmount(q))+(q.unit?' '+esc(q.unit):'')+'</span>':'')+'</div><div class="q-meta">'+meta+'</div>'+(q.mini&&!isG&&!isR?'<div class="q-mini'+(mini?' on':'')+'"><b>MINI</b>'+esc(q.mini)+'</div>':'')+mainClose+'</div><span class="q-xp">+'+xp+'<small>XP</small><em>+'+goldFor(q.rank,xp)+' G</em></span>'+setsHTML(q,isG||isR,done)+planHTML(q,isG||isR,done)+'</li>';
 }
 function tabQuests(){
   var t=today(),e=S.log[t]||{},h="";
@@ -2399,6 +2410,7 @@ function questForm(kind,item){
     '<form id="qf"><div class="field"><label for="f-name">Name</label><input id="f-name" maxlength="60" required value="'+esc(it.name)+'" placeholder="'+(isG?'Hit 100 subscribers':'Meditate 10 min')+'" autocomplete="off"></div>'+
     '<div class="suggest" id="sugg"></div>'+
     (isG?'':'<div class="field"><label for="f-mini">Mini version (optional)</label><input id="f-mini" maxlength="60" value="'+esc(it.mini||"")+'" placeholder="The smallest version, e.g. 1 min"></div>'+
+      '<div class="field"><label>Sets (optional)</label><div class="setsrow"><input id="f-sets" type="number" min="2" max="20" inputmode="numeric" placeholder="5" value="'+(it.sets||'')+'"><span>sets of</span><input id="f-setlbl" maxlength="20" placeholder="10 min" value="'+esc(it.setLabel||"")+'"></div><small class="sub">Tap a box on the quest after each set. The quest completes when every set is done.</small></div>'+
       '<div class="field wk"><label>Weekly increase (optional)</label><p class="wkhelp">Makes this quest a little harder every week, automatically. Fill in all three, or leave them blank to keep the quest the same.</p><div class="prog3">'+
         '<div><small>Target now</small><input id="f-amt" type="number" min="0" step="any" inputmode="decimal" placeholder="20" value="'+(it.amt!=null?it.amt:'')+'"><i>What you do today</i></div>'+
         '<div><small>Add each week</small><input id="f-step" type="number" step="any" inputmode="decimal" placeholder="2" value="'+(it.step!=null?it.step:'')+'"><i>Goes up by this every 7 days</i></div>'+
@@ -2477,12 +2489,14 @@ function questForm(kind,item){
     var before=derive(),t=today();
     var amtEl=document.getElementById("f-amt"),prog=null;
     if(amtEl&&amtEl.value!==""&&!isNaN(+amtEl.value)){prog={amt:+amtEl.value,step:+(document.getElementById("f-step").value||0)||0,unit:document.getElementById("f-unit").value.trim().slice(0,12)};}
+    var se=document.getElementById("f-sets"),sl=document.getElementById("f-setlbl"),sv=se?Math.round(+se.value||0):0;
+    var applySets=function(q){if(sv>=2){q.sets=Math.min(20,sv);q.setLabel=(sl.value||"").trim().slice(0,20);}else{delete q.sets;delete q.setLabel;}};
     var applySched=function(q){var nd=(PD.days||[]).slice().sort();var od=(q.days||[]).slice().sort();if(nd.join()!==od.join())q.daysFrom=t;if(nd.length)q.days=nd;else{delete q.days;}var pl={};Object.keys(PD.plan||{}).forEach(function(k){if(String(PD.plan[k]).trim())pl[k]=PD.plan[k];});if(Object.keys(pl).length)q.plan=pl;else delete q.plan;};
     var applyProg=function(q){if(prog){var cur=q.amt!=null?qAmount(q):null;if(cur===null||cur!==prog.amt||q.step!==prog.step)q.progStart=t;q.amt=prog.amt;q.step=prog.step;q.unit=prog.unit;}else{delete q.amt;delete q.step;delete q.unit;delete q.progStart;}};
-    if(item){item.name=name;item.stat=stat;if(!isG){item.mini=mini;item.group=grp;applyProg(item);applySched(item);}
+    if(item){item.name=name;item.stat=stat;if(!isG){item.mini=mini;item.group=grp;applyProg(item);applySched(item);applySets(item);}
       if(item.rank!==rank){item.rank=rank;var k=isG?"g:"+item.id:item.id;if(S.log[t]&&S.log[t][k])S.log[t][k]=S.log[t]["_m:"+item.id]?Math.round(tbl[rank]/2):tbl[rank];}}
     else if(isG)S.gates.push({id:uid(),name:name,stat:stat,rank:rank,created:t,done:""});
-    else{var nq={id:uid(),name:name,mini:mini,group:grp,stat:stat,rank:rank,created:t,lastUp:t,tier:1};applyProg(nq);applySched(nq);if(nq.days)nq.daysFrom=t;S.quests.push(nq);}
+    else{var nq={id:uid(),name:name,mini:mini,group:grp,stat:stat,rank:rank,created:t,lastUp:t,tier:1};applyProg(nq);applySched(nq);applySets(nq);if(nq.days)nq.daysFrom=t;S.quests.push(nq);}
     closeModal();afterChange(before,"System",item?"Quest updated.":(isG?"A new gate has appeared.":"New quest registered."),"notify");
   });
 }
@@ -2823,6 +2837,8 @@ function handleAction(b){
     rt.split(/\n/).forEach(function(line){var m=line.match(/^\s*\**\s*(\d+)\s*[:.)\-]\s*\**\s*(SSS|SS|S|A|B|C|D|E)\b\**\s*[-–—:]?\s*(.*)$/i);if(!m)return;var q=qs2[+m[1]-1];var rk=m[2].toUpperCase();if(RANKS.indexOf(rk)<0)rk="S";if(q)out2.push({id:q.id,name:q.name,from:q.rank,rank:rk,why:m[3].trim().slice(0,80)});});
     if(!out2.length){toast("Ask Claude","Couldn't read ranks from that reply. Paste Claude's full answer.");play("error");return;}showRankProposal(out2);play("notify");}
   else if(a==="applyranks"){var pr=view.rankProposal||[];var before=derive();pr.forEach(function(x){var q=find(S.quests,x.id);if(q&&x.rank)q.rank=x.rank;});view.rankProposal=null;closeModal();afterChange(before,"System","Quest ranks updated.","notify");}
+  else if(a==="setpip"){var sq=find(S.quests,id),si2=+b.getAttribute("data-i"),sd=today();if(!sq||!sq.sets)return;S.log[sd]=S.log[sd]||{};var cur=S.log[sd]["_s:"+id]||0,nv=si2<cur&&si2===cur-1?cur-1:si2+1;S.log[sd]["_s:"+id]=nv;save();
+    if(nv>=sq.sets&&!S.log[sd][id]){var cb2=document.querySelector('[data-a="toggle"][data-id="'+id+'"]');if(cb2){handleAction(cb2);return;}}render();play(nv<cur?"undo":"press");}
   else if(a==="tick"){var tq=find(S.quests,id),ti=+b.getAttribute("data-i"),td=today();if(!tq)return;S.log[td]=S.log[td]||{};var arr=S.log[td]["_c:"+id]||[],ix=arr.indexOf(ti);if(ix>=0)arr.splice(ix,1);else arr.push(ti);S.log[td]["_c:"+id]=arr;save();
     var Ls=planLines(tq,td)||[],need=Ls.filter(function(l){return l.charAt(0)!=="#";}).length,got=arr.filter(function(i){return Ls[i]&&Ls[i].charAt(0)!=="#";}).length;
     if(need&&got>=need&&!S.log[td][id]){var cb=document.querySelector('[data-a="toggle"][data-id="'+id+'"]');if(cb){handleAction(cb);return;}}render();play(ix>=0?"undo":"press");}
