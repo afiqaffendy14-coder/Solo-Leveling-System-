@@ -623,7 +623,7 @@ var STAT_HINT={STR:"workouts, strength training, Muay Thai, martial arts",VIT:"r
 var RANKS=["E","D","C","B","A","S"];
 var RANK_XP={E:5,D:15,C:40,B:100,A:250,S:600};
 var GATE_XP={E:25,D:60,C:150,B:350,A:800,S:2000};
-var GOLD_MULT={E:.8,D:1,C:1.3,B:1.6,A:2,S:2.5};
+var GOLD_MULT={E:2,D:2.5,C:3,B:3.5,A:4,S:5};
 function goldFor(rank,xp){return Math.round(xp*(GOLD_MULT[rank]||1));}
 var RANK_DESC={E:"Trivial · under 5 min",D:"Easy · 5–15 min",C:"Moderate · 15–30 min",B:"Hard · 30–60 min or a full workout",A:"Very hard · 1–2 hours or intense training",S:"Extreme · 2+ hours, or a double session at max effort"};
 var CLEAR_BONUS=25,PRAY_BONUS=15,VICTORY_XP=25,PENALTY_XP=15,TEST_XP=30,BOOST=1.5,HEARTS=3;
@@ -632,23 +632,23 @@ function need(l){return 100*(2*l-1);}
 function hunterRank(l){return l>=65?"SSS":l>=50?"SS":l>=38?"S":l>=26?"A":l>=17?"B":l>=10?"C":l>=5?"D":"E";}
 var RANK_AT={E:1,D:5,C:10,B:17,A:26,S:38,SS:50,SSS:65};
 var ITEMS={
-  shield:{name:"Streak Shield",desc:"Blocks a failed day when you have no hearts left.",cost:500},
-  potion:{name:"EXP Potion",desc:"1.5× EXP and gold for one day.",cost:400}
+  shield:{name:"Streak Shield",desc:"Blocks a failed day when you have no hearts left.",cost:300},
+  potion:{name:"EXP Potion",desc:"1.5× EXP and gold for one day.",cost:300}
 };
 var THEMES={
   azure:{name:"Azure System",cost:0,req:"E",sw:"linear-gradient(135deg,#2f6bff,#58c4ff)"},
-  jade:{name:"Jade Gate",cost:2000,req:"D",sw:"linear-gradient(135deg,#14a078,#6ef0be)"},
-  crimson:{name:"Crimson Gate",cost:6000,req:"C",sw:"linear-gradient(135deg,#c8143c,#ff5c78)"},
-  violet:{name:"Shadow Violet",cost:15000,req:"B",sw:"linear-gradient(135deg,#6e32e6,#ba8cff)"},
-  ember:{name:"Ember",cost:15000,req:"B",sw:"linear-gradient(135deg,#050302,#2a0f04 50%,#ff7a1a)"},
-  toxic:{name:"Toxic",cost:15000,req:"B",sw:"linear-gradient(135deg,#030603,#0f2a08 50%,#9dff2e)"},
-  abyss:{name:"Abyss",cost:30000,req:"A",sw:"linear-gradient(135deg,#5a0a14,#ff4646)"},
-  gold:{name:"Sovereign Gold",cost:30000,req:"A",sw:"linear-gradient(135deg,#d69614,#ffd66e)"},
-  obsidian:{name:"Obsidian",cost:30000,req:"A",sw:"linear-gradient(135deg,#000,#1a1a1f 60%,#e8e8ee)"},
-  neon:{name:"Neon Rift",cost:30000,req:"A",sw:"linear-gradient(135deg,#06020a,#3a0a40 50%,#ff3df2)"},
-  sakura:{name:"Night Sakura",cost:30000,req:"A",sw:"linear-gradient(135deg,#0a0408,#3a1428 50%,#ff8fc7)"},
-  blackice:{name:"Black Ice",cost:60000,req:"S",sw:"linear-gradient(135deg,#010307,#0a2030 50%,#7ff6ff)"},
-  bloodmoon:{name:"Blood Moon",cost:120000,req:"SS",sw:"linear-gradient(135deg,#000,#300004 55%,#ff1f3d)"}
+  jade:{name:"Jade Gate",cost:1500,req:"D",sw:"linear-gradient(135deg,#14a078,#6ef0be)"},
+  crimson:{name:"Crimson Gate",cost:4000,req:"C",sw:"linear-gradient(135deg,#c8143c,#ff5c78)"},
+  violet:{name:"Shadow Violet",cost:8000,req:"B",sw:"linear-gradient(135deg,#6e32e6,#ba8cff)"},
+  ember:{name:"Ember",cost:8000,req:"B",sw:"linear-gradient(135deg,#050302,#2a0f04 50%,#ff7a1a)"},
+  toxic:{name:"Toxic",cost:8000,req:"B",sw:"linear-gradient(135deg,#030603,#0f2a08 50%,#9dff2e)"},
+  abyss:{name:"Abyss",cost:15000,req:"A",sw:"linear-gradient(135deg,#5a0a14,#ff4646)"},
+  gold:{name:"Sovereign Gold",cost:15000,req:"A",sw:"linear-gradient(135deg,#d69614,#ffd66e)"},
+  obsidian:{name:"Obsidian",cost:15000,req:"A",sw:"linear-gradient(135deg,#000,#1a1a1f 60%,#e8e8ee)"},
+  neon:{name:"Neon Rift",cost:15000,req:"A",sw:"linear-gradient(135deg,#06020a,#3a0a40 50%,#ff3df2)"},
+  sakura:{name:"Night Sakura",cost:15000,req:"A",sw:"linear-gradient(135deg,#0a0408,#3a1428 50%,#ff8fc7)"},
+  blackice:{name:"Black Ice",cost:30000,req:"S",sw:"linear-gradient(135deg,#010307,#0a2030 50%,#7ff6ff)"},
+  bloodmoon:{name:"Blood Moon",cost:60000,req:"SS",sw:"linear-gradient(135deg,#000,#300004 55%,#ff1f3d)"}
 };
 var THEME_GLOW={azure:"#58c4ff",jade:"#6ef0be",crimson:"#ff5c78",violet:"#ba8cff",gold:"#ffd66e",abyss:"#ff4646",obsidian:"#e8e8ee",ember:"#ff7a1a",neon:"#ff3df2",toxic:"#9dff2e",sakura:"#ff8fc7",blackice:"#7ff6ff",bloodmoon:"#ff1f3d"};
 var GEAR=[
@@ -749,7 +749,7 @@ function setGear(st){var g={outfit:"bare",head:"nohead",armR:"noarm",armL:"noarm
   if(st.gear.arm){var sd=st.gear.armSide||"right";g.armR=sd==="left"?"noarm":st.gear.arm;g.armL=sd==="right"?"noarm":st.gear.arm;}return g;}
 function setLook(st){var l=JSON.parse(JSON.stringify(S.look));Object.keys(st.look||{}).forEach(function(k){l[k]=st.look[k];});return l;}
 function owns(id){return !!S.unlockAll||S.owned.indexOf(id)>=0;}
-var GEAR_BY={};GEAR.forEach(function(g){GEAR_BY[g.id]=g;});
+var GEAR_BY={};GEAR.forEach(function(g){g.price=Math.round((g.cost||0)*.6/50)*50;GEAR_BY[g.id]=g;});
 var SLOTS=[["sets","Sets"],["outfit","Armor"],["head","Head"],["arm","Arm"],["weapon","Weapons"],["aura","Auras"],["bg","Places"],["extra","Extras"]];
 var TRIGGERS=["Bored","Stressed","Tired","Alone","Late night","Phone in bed","Sad","Travel"];
 var LOOK_OPTS={
@@ -910,7 +910,7 @@ function derive(){
     if(cleared){dayXP+=Math.round(CLEAR_BONUS*mult);if(hadGate)perfectGateDay=true;}
     var pr=req.filter(isPrayer),prOn=pr.length>0&&pr.every(function(q){return e[q.id]&&!e["_m:"+q.id];});
     if(prOn){dayXP+=Math.round(PRAY_BONUS*mult);prayRun++;prayBest=Math.max(prayBest,prayRun);}else if(d<t)prayRun=0;
-    earned+=dayXP;goldEarned+=dayXP-dayQ;
+    earned+=dayXP;goldEarned+=(dayXP-dayQ)*2;
     var state;
     if(!req.length)state="none";
     else if(cleared)state="clear";
@@ -1864,8 +1864,8 @@ function tabStore(){
     var owned=owns(g.id),eq=isEquipped(g),locked=!rankOK(g.req,R.lvl),drop=g.drop?BOSSES_BY[g.drop]:null;
     var sides=sideOpts(g);
     var btn=owned&&sides?'<span class="sides">'+sides.map(function(sd){var on=g.slot==="arm"?armSideOf(g.id)===sd||(sd!=="both"&&armSideOf(g.id)==="both"&&false):eq&&S.gear.weaponSide===sd;return '<button class="btn sm'+(on?' primary':'')+'" data-a="equip" data-id="'+g.id+'" data-side="'+sd+'">'+(sd==="both"?"Both":sd==="left"?"L":"R")+'</button>';}).join("")+'</span>':owned?(TOGGLES.indexOf(g.slot)>=0?'<button class="btn sm" data-a="equip" data-id="'+g.id+'">'+(eq?'Take off':'Wear')+'</button>':(eq?'<span class="own">EQUIPPED</span>':'<button class="btn sm" data-a="equip" data-id="'+g.id+'">Equip</button>')):
-      drop?'<span class="sub" style="font-size:.7rem">Floor '+drop.floor+'</span>':'<button class="btn sm goldb" data-a="buyg" data-id="'+g.id+'"'+(R.gold<g.cost||locked?' disabled':'')+'>'+(locked?g.req+'-rank':'Buy')+'</button>';
-    h+='<div class="gear rar-'+(drop?'X':g.req||'E')+(eq?' eq':'')+(drop?' unique':'')+'">'+(drop?'<span class="utag">BOSS DROP</span>':'')+'<button class="pv" data-a="preview" data-id="'+g.id+'" aria-label="Preview '+esc(g.name)+'">'+gearPreview(g)+'<span class="rkb rk-'+itemRank(g)+'">'+itemRank(g)+'</span></button><b>'+esc(g.name)+'</b><span class="gd">'+esc(g.desc)+'</span>'+(g.slot==="bg"?'':statChips(gearStats(g)))+'<div class="gb">'+(owned?'<span style="color:var(--glow)">'+(S.unlockAll&&S.owned.indexOf(g.id)<0?'Unlocked':'Owned')+'</span>':drop?'<span>'+esc(drop.name)+'</span>':'<span>'+coin()+g.cost.toLocaleString()+'</span>')+btn+'</div></div>';
+      drop?'<span class="sub" style="font-size:.7rem">Floor '+drop.floor+'</span>':'<button class="btn sm goldb" data-a="buyg" data-id="'+g.id+'"'+(R.gold<g.price||locked?' disabled':'')+'>'+(locked?g.req+'-rank':'Buy')+'</button>';
+    h+='<div class="gear rar-'+(drop?'X':g.req||'E')+(eq?' eq':'')+(drop?' unique':'')+'">'+(drop?'<span class="utag">BOSS DROP</span>':'')+'<button class="pv" data-a="preview" data-id="'+g.id+'" aria-label="Preview '+esc(g.name)+'">'+gearPreview(g)+'<span class="rkb rk-'+itemRank(g)+'">'+itemRank(g)+'</span></button><b>'+esc(g.name)+'</b><span class="gd">'+esc(g.desc)+'</span>'+(g.slot==="bg"?'':statChips(gearStats(g)))+'<div class="gb">'+(owned?'<span style="color:var(--glow)">'+(S.unlockAll&&S.owned.indexOf(g.id)<0?'Unlocked':'Owned')+'</span>':drop?'<span>'+esc(drop.name)+'</span>':'<span>'+coin()+g.price.toLocaleString()+'</span>')+btn+'</div></div>';
   });
   h+='</div></section>';
   h+='<section class="win"><div class="win-h"><span class="tag">My Rewards</span><button class="link" data-a="addr">+ Add</button></div><div class="shop">';
@@ -2042,28 +2042,28 @@ function fightOpen(){return R.lvl>=FIGHT_LVL;}
 function armyCap(){return ARMY_CAP[R.rank]||5;}
 
 var ARMY=[
-  {id:"footman",name:"Shadow Footman",cost:2000,max:20,power:50,desc:"A loyal blade in the dark."},
-  {id:"archer",name:"Shadow Archer",cost:3500,max:15,power:80,desc:"Hooded marksman on the back line."},
-  {id:"assassin",name:"Shadow Assassin",cost:5000,max:12,power:120,desc:"Twin daggers and a trailing scarf."},
-  {id:"lancer",name:"Shadow Lancer",cost:6000,max:10,power:140,desc:"Long spear with a banner hook."},
-  {id:"knight",name:"Shadow Knight",cost:8000,max:10,power:170,desc:"Shield, sword and plume."},
-  {id:"mage",name:"Shadow Mage",cost:9000,max:8,power:200,desc:"Robed caster with a dark orb."},
-  {id:"monk",name:"Shadow Monk",cost:10000,max:8,power:220,desc:"Prayer beads and iron fists."},
-  {id:"wolf",name:"Shadow Wolf",cost:12000,max:8,power:260,desc:"Hunts at your side."},
-  {id:"berserker",name:"Shadow Berserker",cost:18000,max:6,power:380,desc:"Swings a double-bladed axe."},
-  {id:"giant",name:"Shadow Giant",cost:30000,max:4,power:550,desc:"Towering brute with a club."},
-  {id:"wyvern",name:"Shadow Wyvern",cost:50000,max:3,power:900,desc:"Circles the sky above you."},
-  {id:"marshal",name:"Shadow Marshal",cost:100000,max:1,power:1500,desc:"Your general, crowned and cloaked."},
-  {id:"dancer",name:"Blade Dancer",special:true,req:"B",cost:120000,max:1,power:2200,desc:"Silk ribbons and a blur of steel. Too fast to follow."},
-  {id:"ashen",name:"Ashen Knight",special:true,req:"B",cost:150000,max:1,power:2600,desc:"A fallen champion in a tattered cloak. Leads the front line."},
-  {id:"valkyrie",name:"Frost Valkyrie",special:true,req:"A",cost:220000,max:1,power:3400,desc:"Winged lancer who descends with the storm."},
-  {id:"archmage",name:"Grand Archmage",special:true,req:"A",cost:250000,max:1,power:3800,desc:"Orbiting rune rings and a star-orb staff."},
-  {id:"behemoth",name:"Behemoth",special:true,req:"S",cost:380000,max:1,power:5200,desc:"A walking fortress of shadow with a ridged back."},
-  {id:"skydragon",name:"Sky Dragon",special:true,req:"SS",cost:600000,max:1,power:8000,desc:"Sovereign of the skies. Only one may ever rise."}
+  {id:"footman",name:"Shadow Footman",cost:1000,max:20,power:50,desc:"A loyal blade in the dark."},
+  {id:"archer",name:"Shadow Archer",cost:1750,max:15,power:80,desc:"Hooded marksman on the back line."},
+  {id:"assassin",name:"Shadow Assassin",cost:2500,max:12,power:120,desc:"Twin daggers and a trailing scarf."},
+  {id:"lancer",name:"Shadow Lancer",cost:3000,max:10,power:140,desc:"Long spear with a banner hook."},
+  {id:"knight",name:"Shadow Knight",cost:4000,max:10,power:170,desc:"Shield, sword and plume."},
+  {id:"mage",name:"Shadow Mage",cost:4500,max:8,power:200,desc:"Robed caster with a dark orb."},
+  {id:"monk",name:"Shadow Monk",cost:5000,max:8,power:220,desc:"Prayer beads and iron fists."},
+  {id:"wolf",name:"Shadow Wolf",cost:6000,max:8,power:260,desc:"Hunts at your side."},
+  {id:"berserker",name:"Shadow Berserker",cost:9000,max:6,power:380,desc:"Swings a double-bladed axe."},
+  {id:"giant",name:"Shadow Giant",cost:15000,max:4,power:550,desc:"Towering brute with a club."},
+  {id:"wyvern",name:"Shadow Wyvern",cost:25000,max:3,power:900,desc:"Circles the sky above you."},
+  {id:"marshal",name:"Shadow Marshal",cost:50000,max:1,power:1500,desc:"Your general, crowned and cloaked."},
+  {id:"dancer",name:"Blade Dancer",special:true,req:"B",cost:60000,max:1,power:2200,desc:"Silk ribbons and a blur of steel. Too fast to follow."},
+  {id:"ashen",name:"Ashen Knight",special:true,req:"B",cost:75000,max:1,power:2600,desc:"A fallen champion in a tattered cloak. Leads the front line."},
+  {id:"valkyrie",name:"Frost Valkyrie",special:true,req:"A",cost:110000,max:1,power:3400,desc:"Winged lancer who descends with the storm."},
+  {id:"archmage",name:"Grand Archmage",special:true,req:"A",cost:125000,max:1,power:3800,desc:"Orbiting rune rings and a star-orb staff."},
+  {id:"behemoth",name:"Behemoth",special:true,req:"S",cost:190000,max:1,power:5200,desc:"A walking fortress of shadow with a ridged back."},
+  {id:"skydragon",name:"Sky Dragon",special:true,req:"SS",cost:300000,max:1,power:8000,desc:"Sovereign of the skies. Only one may ever rise."}
 ];
 function armyCount(){var n=0;ARMY.forEach(function(a){n+=(S.army&&S.army[a.id])||0;});return n;}
 function bossShadows(){return BOSSES.filter(function(b){return S.army&&S.army["b_"+b.key];});}
-var SH_MULT=[1,1,1.6,2.4,3.5,5],SH_UPCOST=[0,0,3,8,20,50];
+var SH_MULT=[1,1,1.6,2.4,3.5,5],SH_UPCOST=[0,0,2,5,12,30];
 function shPower(a,tier){return Math.round(a.power*SH_MULT[tier||shTierOf(a.id)]);}
 function shName(a,tier){tier=tier||shTierOf(a.id);return (SH_TIER_NAME[tier]?SH_TIER_NAME[tier]+" ":"")+a.name;}
 function armyPower(){var p=0;ARMY.forEach(function(a){p+=((S.army&&S.army[a.id])||0)*shPower(a);});bossShadows().forEach(function(b){p+=b.power;});return p;}
@@ -2838,9 +2838,9 @@ function handleAction(b){
   else if(a==="customize")customizeForm();
   else if(a==="savelook"){if(draftLook){S.look=draftLook;draftLook=null;save();}closeModal();render();play("clear");}
   else if(a==="wardrobe"){view.tab="store";play("tab");render();window.scrollTo(0,0);}
-  else if(a==="buyg"){var gg=GEAR_BY[id];if(gg&&!gg.drop)confirmBuy(gg.name,gg.cost,"buyg2",id);}
-  else if(a==="buyg2"){var g2=GEAR_BY[id];if(g2&&purchase("gear",id,g2.name,g2.cost)){S.owned.push(id);equip(g2);save();render();}}
-  else if(a==="preview"){var gp=GEAR_BY[id];if(gp){var own=owns(id),lk=!rankOK(gp.req,R.lvl);openModal('<span class="tag">'+esc(SLOTS.filter(function(x){return x[0]===gp.slot||(x[0]==="extra"&&TOGGLES.indexOf(gp.slot)>=0);})[0][1])+'</span><h2>'+esc(gp.name)+'</h2><p>'+esc(gp.desc)+(gp.req?' Requires '+gp.req+'-rank.':'')+'</p>'+statChips(gearStats(gp),'big')+'<div style="display:grid;place-items:center;margin:12px 0" id="gpv">'+gearPreview(gp)+'</div><div class="row">'+(own?(sideOpts(gp)?sideOpts(gp).map(function(sd){return '<button class="btn'+((gp.slot==="arm"?armSideOf(gp.id)===sd:isEquipped(gp)&&S.gear.weaponSide===sd)?' primary':'')+'" data-a="equip" data-id="'+gp.id+'" data-side="'+sd+'">'+(sd==="both"?(gp.slot==="arm"?"Both arms":"Both hands"):sd==="left"?(gp.slot==="arm"?"Left arm":"Left hand"):(gp.slot==="arm"?"Right arm":"Right hand"))+'</button>';}).join(""):TOGGLES.indexOf(gp.slot)<0&&isEquipped(gp)?'<span class="own">EQUIPPED</span>':'<button class="btn primary" data-a="equip" data-id="'+gp.id+'">'+(TOGGLES.indexOf(gp.slot)>=0?(isEquipped(gp)?'Take off':'Wear'):'Equip')+'</button>'):'<span class="sub" style="margin-right:auto">'+coin()+' '+gp.cost.toLocaleString()+'</span><button class="btn" data-a="tryon" data-id="'+gp.id+'">Try on</button>'+(gp.drop?'<span class="sub">Drops from '+esc(BOSSES_BY[gp.drop].name)+'</span>':'<button class="btn goldb" data-a="buyg" data-id="'+gp.id+'"'+(R.gold<gp.cost||lk?' disabled':'')+'>'+(lk?gp.req+'-rank needed':'Buy')+'</button>'))+'<button class="btn ghost" data-a="close">Close</button></div>');var sv=modal.querySelector("#gpv svg");if(sv)sv.style.width="220px";play("open");}}
+  else if(a==="buyg"){var gg=GEAR_BY[id];if(gg&&!gg.drop)confirmBuy(gg.name,gg.price,"buyg2",id);}
+  else if(a==="buyg2"){var g2=GEAR_BY[id];if(g2&&purchase("gear",id,g2.name,g2.price)){S.owned.push(id);equip(g2);save();render();}}
+  else if(a==="preview"){var gp=GEAR_BY[id];if(gp){var own=owns(id),lk=!rankOK(gp.req,R.lvl);openModal('<span class="tag">'+esc(SLOTS.filter(function(x){return x[0]===gp.slot||(x[0]==="extra"&&TOGGLES.indexOf(gp.slot)>=0);})[0][1])+'</span><h2>'+esc(gp.name)+'</h2><p>'+esc(gp.desc)+(gp.req?' Requires '+gp.req+'-rank.':'')+'</p>'+statChips(gearStats(gp),'big')+'<div style="display:grid;place-items:center;margin:12px 0" id="gpv">'+gearPreview(gp)+'</div><div class="row">'+(own?(sideOpts(gp)?sideOpts(gp).map(function(sd){return '<button class="btn'+((gp.slot==="arm"?armSideOf(gp.id)===sd:isEquipped(gp)&&S.gear.weaponSide===sd)?' primary':'')+'" data-a="equip" data-id="'+gp.id+'" data-side="'+sd+'">'+(sd==="both"?(gp.slot==="arm"?"Both arms":"Both hands"):sd==="left"?(gp.slot==="arm"?"Left arm":"Left hand"):(gp.slot==="arm"?"Right arm":"Right hand"))+'</button>';}).join(""):TOGGLES.indexOf(gp.slot)<0&&isEquipped(gp)?'<span class="own">EQUIPPED</span>':'<button class="btn primary" data-a="equip" data-id="'+gp.id+'">'+(TOGGLES.indexOf(gp.slot)>=0?(isEquipped(gp)?'Take off':'Wear'):'Equip')+'</button>'):'<span class="sub" style="margin-right:auto">'+coin()+' '+gp.price.toLocaleString()+'</span><button class="btn" data-a="tryon" data-id="'+gp.id+'">Try on</button>'+(gp.drop?'<span class="sub">Drops from '+esc(BOSSES_BY[gp.drop].name)+'</span>':'<button class="btn goldb" data-a="buyg" data-id="'+gp.id+'"'+(R.gold<gp.price||lk?' disabled':'')+'>'+(lk?gp.req+'-rank needed':'Buy')+'</button>'))+'<button class="btn ghost" data-a="close">Close</button></div>');var sv=modal.querySelector("#gpv svg");if(sv)sv.style.width="220px";play("open");}}
   else if(a==="dungeon"){if(battleTimer){clearTimeout(battleTimer);battleTimer=null;}R=derive();startBattle();}
   else if(a==="bskip"){if(view.skipBattle)view.skipBattle();}
   else if(a==="skill"){var sk=find(SKILLS,id);if(!sk||!skillOk(sk))return;S.skills=S.skills||[];var si=S.skills.indexOf(id);S.skills=activeSkills();si=S.skills.indexOf(id);if(si>=0)S.skills.splice(si,1);else{S.skills.push(id);if(S.skills.length>skillSlots())S.skills.shift();}save();render();play("notify");}
