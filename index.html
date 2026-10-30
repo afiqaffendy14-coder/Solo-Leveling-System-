@@ -2482,6 +2482,9 @@ function questForm(kind,item){
 }
 var CL_SCALE="Scale: E trivial, under 5 min. D easy, 5-15 min. C moderate, 15-30 min. B hard, 30-60 min or a full workout. A very hard, 1-2 hours or intense training such as a sparring class or 10 km run. S extreme, 2+ hours or a double session at max effort such as gym plus martial arts the same day, a 15-21 km run, or 3 hours of focused work. Most daily habits land D to B.";
 function openClaude(prompt){try{if(navigator.clipboard)navigator.clipboard.writeText(prompt).catch(function(){});}catch(e){}
+  var chat=S.claudeChat&&/^https:\/\/claude\.ai\//.test(S.claudeChat)?S.claudeChat:"";
+  if(chat){var w0=window.open(chat,"_blank");if(!w0)location.href=chat;toast("Ask Claude","Question copied. Paste it into your Claude chat and send.");return;}
+  if(navigator.share&&/Android|iPhone|iPad/i.test(navigator.userAgent)){navigator.share({text:prompt}).then(function(){},function(){});return;}
   var url="https://claude.ai/new?q="+encodeURIComponent(prompt);var w=window.open(url,"_blank");if(!w)location.href=url;}
 function stripAsk(t){t=String(t||"");var k=t.lastIndexOf("filling in your answers:"),k2=t.lastIndexOf("rank letter, dash, a short reason.");if(k2>k)k=k2;if(k>=0){var after=t.slice(k),nl=after.indexOf("\n");t=nl>=0?after.slice(nl):"";t=t.replace(/^\s*Rank: <letter>\s*Stat: <stat>(\s*Mini: <tiny version>)?/,"");}return t;}
 function lastMatch(t,re){var m,last=null,g=new RegExp(re.source,"gi");while((m=g.exec(t)))last=m;return last;}
@@ -2703,9 +2706,11 @@ function settings(){
     '<p class="sub">Copy this text somewhere safe. To restore, paste a backup and press Restore.</p>'+
     '<div class="row"><button class="btn" data-a="copybk">Copy backup</button><button class="btn" data-a="restore">Restore</button></div>'+
     '<div class="row" style="justify-content:flex-start;margin:4px 0 10px"><button class="btn" data-a="tutopen">How to play</button><button class="btn" data-a="reminders">Reminders</button></div>'+
+    '<div class="field"><label for="f-cchat">Ask Claude in this chat (optional)</label><input id="f-cchat" placeholder="Paste a Claude chat link" value="'+esc(S.claudeChat||"")+'" inputmode="url"><p class="sub">Leave empty and Ask Claude sends the question to the Claude app through your share menu, as a new chat. Paste a chat link here to always ask in that chat instead. The question is copied, so you just paste and send.</p></div>'+
     '<div class="field"><label>Preview mode</label></div><div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn'+(S.unlockAll?' primary':'')+'" data-a="previewmode">'+(S.unlockAll?'On: everything unlocked':'Off: unlock by rank')+'</button></div><p class="sub">Preview mode unlocks all gear and skills so you can try them. Turn it off to earn them for real.</p>'+
     '<div class="field"><label>Backup</label></div><div class="row" style="justify-content:flex-start;margin-top:6px;flex-wrap:wrap"><button class="btn" data-a="exportbk">Export backup</button><button class="btn" data-a="importbk">Import backup</button></div><p class="sub">Your progress lives on this device. Export a backup now and then, and import it to move to a new phone.</p>'+
     '<div class="row"><button class="btn danger grow" data-a="reset">Reset everything</button><button class="btn ghost" data-a="close">Close</button></div>');
+  var cc=document.getElementById("f-cchat");if(cc)cc.addEventListener("change",function(){var v=cc.value.trim();if(v&&!/^https:\/\/claude\.ai\//.test(v)){toast("Ask Claude","Paste a link that starts with https://claude.ai/");return;}S.claudeChat=v;save();toast("Ask Claude",v?"Ask Claude will open this chat.":"Ask Claude will start a new chat.");play("notify");});
 }
 function confirmBuy(name,cost,action,id){
   play("open");
