@@ -180,6 +180,9 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .rkb.inl{position:static;display:inline-grid;margin-right:6px;vertical-align:1px;height:18px;min-width:18px;font-size:.6rem}
 .rk-E{color:#a7b0c2}.rk-D{color:#6fdc8c}.rk-C{color:#58c4ff}.rk-B{color:#b48cff}.rk-A{color:#ff9a4d}.rk-S{color:#ffcc55;box-shadow:0 0 8px rgba(255,204,85,.45)}.rk-SS{color:#ff4d6d;box-shadow:0 0 8px rgba(255,77,109,.5)}.rk-SSS{color:#fff;border-color:#b88cff;box-shadow:0 0 10px #b88cff}
 .rkdesc{margin:-4px 0 10px;font-size:.78rem;line-height:1.4}
+.mansteps{margin:6px 0 12px;padding-left:20px;font-size:.86rem;line-height:1.5;color:var(--muted)}.mansteps b{color:var(--text)}
+#manreply,#manone{width:100%;margin:10px 0;font-family:inherit;font-size:.86rem;background:rgba(0,0,0,.4);color:var(--text);border:1px solid rgba(var(--g),.3);border-radius:6px;padding:8px 10px}
+.manbox{display:flex;flex-direction:column;gap:6px;width:100%;font-size:.8rem;color:var(--muted)}.manbox #manone{margin:0}.manbox .btn{align-self:flex-end}
 .rankall{display:inline-flex;align-items:center;gap:6px;margin:-4px 0 12px;font-size:.82rem}.rankall svg{width:14px;height:14px}
 .rklist{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
@@ -1712,7 +1715,7 @@ function tabQuests(){
   }
 
   h+='<section class="win"><div class="win-h"><span class="tag">Daily Quest</span><span class="sub" id="cd">Resets in '+countdown()+'</span></div>';
-  if(SAMPLE&&S.quests.filter(function(q){return !q.archived&&!isPrayer(q);}).length)h+='<button class="link rankall" data-a="rankall">'+ICONS.spark+' Let Claude rank my quests</button>';
+  if(S.quests.filter(function(q){return !q.archived&&!isPrayer(q);}).length)h+='<button class="link rankall" data-a="rankall">'+ICONS.spark+' Let Claude rank my quests</button>';
   var yd=addDays(t,-1);
   if(R.days[yd]&&R.days[yd].state==="miss")h+='<p class="note red-note">Yesterday wasn\'t cleared. −'+PENALTY_XP+' EXP, streak reset. Go again.</p>';
   if(e._boost)h+='<p class="note gold-note">EXP Potion active: 1.5× today.</p>';
@@ -2401,12 +2404,24 @@ function questForm(kind,item){
   function showSugg(){
     var g=guessStat(nameEl.value),h="";
     if(g){h+='<span>Suggested:</span><span class="pill">'+g.stat+' · '+STAT_NAMES[g.stat]+'</span>';if(!statTouched)statEl.value=g.stat;}
-    if(SAMPLE&&nameEl.value.trim().length>=3)h+='<button type="button" class="btn sm primary" id="askbtn">'+ICONS.spark+'Ask Claude to rank it</button>';
+    if(nameEl.value.trim().length>=3)h+='<button type="button" class="btn sm primary" id="askbtn">'+ICONS.spark+'Ask Claude to rank it</button>';
     sugg.innerHTML=h;
     var ab=document.getElementById("askbtn");if(ab)ab.addEventListener("click",askClaude);
   }
+  function askManual(nm){
+    var A=document.getElementById("f-amt"),U=document.getElementById("f-unit");
+    var prompt=isG?"I use a habit tracker game. Rank this one-time GOAL by how big it is: \""+nm+"\". E: a day's work. D: a few days. C: a few weeks. B: a month or more. A: several months. S: a year-scale achievement. Also pick the stat it trains from STR (strength), VIT (health, sleep, food), AGI (martial arts, cardio, sport), INT (reading, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection).\n\nReply in exactly this format and nothing else:\nRank: C\nStat: WIL":
+      "I use a habit tracker game. Rank this daily habit by how hard it is to do every single day for an ordinary adult: \""+nm+(A&&A.value?" ("+A.value+" "+(U?U.value:"")+")":"")+"\". "+CL_SCALE+" Also pick the stat it trains from STR (strength), VIT (health, sleep, food), AGI (martial arts, cardio, sport), INT (reading, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection), and give the smallest mini version that takes under 2 minutes.\n\nReply in exactly this format and nothing else:\nRank: D\nStat: SPI\nMini: 1 minute";
+    openClaude(prompt);
+    sugg.innerHTML='<div class="manbox"><span>Question copied and Claude opened. Paste Claude\'s reply here:</span><textarea id="manone" rows="3" placeholder="Rank: C&#10;Stat: STR&#10;Mini: 1 set"></textarea><button type="button" class="btn sm primary" id="manapply">Apply</button></div>';
+    document.getElementById("manapply").addEventListener("click",function(){var r=parseOneRank(document.getElementById("manone").value);
+      if(!r.rank&&!r.stat){toast("Ask Claude","Couldn't find a rank in that reply.");play("error");return;}
+      if(r.stat&&STATS.indexOf(r.stat)>=0){statEl.value=r.stat;statTouched=true;}if(r.rank){rankEl.value=r.rank;if(typeof updRk==="function")updRk();}
+      if(!isG&&miniEl&&r.mini&&!miniEl.value)miniEl.value=r.mini;
+      sugg.innerHTML='<span>Claude:</span>'+(r.stat?'<span class="pill">'+r.stat+'</span>':'')+(r.rank?'<span class="pill">'+r.rank+'-rank · +'+tbl[r.rank]+' XP · +'+goldFor(r.rank,tbl[r.rank])+' G</span>':'');play("notify");});
+  }
   function askClaude(){
-    var nm=nameEl.value.trim();if(!nm||!SAMPLE)return;
+    var nm=nameEl.value.trim();if(!nm)return;if(!SAMPLE){askManual(nm);return;}
     sugg.innerHTML='<span class="thinking"><span class="dots"><i></i><i></i><i></i></span>Asking Claude…</span>';
     var prompt="A habit-tracking RPG has 6 stats: STR (strength training), VIT (sleep, water, food, health), AGI (martial arts, cardio, sport), INT (reading, journaling, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection). "+
       (isG?"Classify this one-time GOAL: \""+nm+"\". Rank E-S by how big the goal is (E: a day's work, C: a few weeks, B: a month or more, A: several months, S: a year-scale achievement). Reply with only JSON: {\"stat\":\"WIL\",\"rank\":\"B\",\"reason\":\"under 12 words\"}":
@@ -2437,18 +2452,32 @@ function questForm(kind,item){
     closeModal();afterChange(before,"System",item?"Quest updated.":(isG?"A new gate has appeared.":"New quest registered."),"notify");
   });
 }
+var CL_SCALE="Scale: E trivial, under 5 min. D easy, 5-15 min. C moderate, 15-30 min. B hard, 30-60 min or a full workout. A very hard, 1-2 hours or intense training such as a sparring class or 10 km run. S extreme, 2+ hours or a double session at max effort such as gym plus martial arts the same day, a 15-21 km run, or 3 hours of focused work. Most daily habits land D to B.";
+function openClaude(prompt){try{if(navigator.clipboard)navigator.clipboard.writeText(prompt).catch(function(){});}catch(e){}
+  var url="https://claude.ai/new?q="+encodeURIComponent(prompt);var w=window.open(url,"_blank");if(!w)location.href=url;}
+function parseOneRank(t){t=String(t||"");var r=(t.match(/rank\s*[:\-=]?\s*\**\s*(SSS|SS|S|A|B|C|D|E)\b/i)||[])[1],s=(t.match(/stat\s*[:\-=]?\s*\**\s*(STR|VIT|AGI|INT|WIL|SPI)\b/i)||[])[1],m=(t.match(/mini\s*[:\-=]\s*\**\s*([^\n*]+)/i)||[])[1];
+  r=r&&r.toUpperCase();if(r&&RANKS.indexOf(r)<0)r="S";return {rank:r||null,stat:s?s.toUpperCase():null,mini:m?m.trim().slice(0,60):null};}
+function rankAllManual(qs){
+  var list=qs.map(function(q,i){return (i+1)+". "+q.name+(q.amt!=null?" ("+fmtAmt(qAmount(q))+" "+(q.unit||"")+")":"");}).join("\n");
+  var prompt="I use a habit tracker game. Rank each daily habit below by how hard it is to do every single day for an ordinary adult, considering time, intensity and willpower. "+CL_SCALE+"\n\nHabits:\n"+list+"\n\nReply with one line per habit in exactly this format and nothing else:\n1: C - short reason";
+  view.manualPrompt=prompt;
+  openModal('<span class="tag">Ask Claude</span><h2>Rank my quests</h2><ol class="mansteps"><li>Tap <b>Open Claude</b>. The question is copied for you, so paste it if Claude opens empty.</li><li>Copy Claude\'s whole reply.</li><li>Paste it below and tap <b>Check ranks</b>.</li></ol><button class="btn primary" data-a="manopen" style="width:100%">'+ICONS.spark+' Open Claude</button><textarea id="manreply" rows="6" placeholder="Paste Claude\'s reply here"></textarea><div class="row"><button class="btn ghost grow" data-a="close">Cancel</button><button class="btn primary" data-a="manparse">Check ranks</button></div>');
+  view.manualQs=qs;
+}
 function rankAllQuests(){
-  var qs=S.quests.filter(function(q){return !q.archived&&!isPrayer(q);});if(!qs.length||!SAMPLE)return;
+  var qs=S.quests.filter(function(q){return !q.archived&&!isPrayer(q);});if(!qs.length)return;if(!SAMPLE){rankAllManual(qs);return;}
   openModal('<span class="tag">Claude ranking</span><h2>Ranking your quests</h2><p class="thinking"><span class="dots"><i></i><i></i><i></i></span>Claude is judging how hard each habit is…</p>');play("open");
   var list=qs.map(function(q,i){return (i+1)+". "+q.name+(q.amt!=null?" ("+fmtAmt(qAmount(q))+" "+(q.unit||"")+")":"");}).join("\n");
   var prompt="Rank each daily HABIT by how hard it is to do every single day for an ordinary adult. Consider time, intensity and willpower. Scale: E trivial, under 5 min. D easy, 5-15 min. C moderate, 15-30 min. B hard, 30-60 min or a full workout. A very hard, 1-2 hours or intense training such as a sparring class or 10 km run. S extreme, 2+ hours or a double session at max effort such as gym plus martial arts the same day, a 15-21 km run, or 3 hours of focused work. Most daily habits land D to B. Habits:\n"+list+"\nReply with only JSON: {\"ranks\":[{\"n\":1,\"rank\":\"D\",\"reason\":\"under 10 words\"}]}";
   SAMPLE.json(prompt,{modelTier:"quick"}).then(function(r){
     var out=(r&&r.ranks||[]).map(function(x){var q=qs[(+x.n||0)-1];return q&&RANKS.indexOf(x.rank)>=0?{id:q.id,name:q.name,from:q.rank,rank:x.rank,why:String(x.reason||"").slice(0,80)}:null;}).filter(Boolean);
+    showRankProposal(out);play("notify");
+  },function(e){openModal('<span class="tag">Claude ranking</span><p>'+esc(aiError(e)||"Cancelled.")+'</p><div class="row"><button class="btn" data-a="close">Close</button></div>');});
+}
+function showRankProposal(out){
     view.rankProposal=out;
     var ch=out.filter(function(x){return x.from!==x.rank;}).length;
     openModal('<span class="tag">Claude ranking</span><h2>'+(ch?ch+' rank change'+(ch>1?'s':'')+' suggested':'Your ranks look right')+'</h2><ul class="rklist">'+out.map(function(x){var d=x.from!==x.rank;return '<li class="'+(d?'chg':'')+'"><div><b>'+esc(x.name)+'</b><small>'+esc(x.why)+'</small></div><span class="rkto"><i class="r-'+x.from+'">'+x.from+'</i>'+(d?'→<i class="r-'+x.rank+'">'+x.rank+'</i>':'')+'</span><span class="sub">+'+RANK_XP[x.rank]+' XP · +'+goldFor(x.rank,RANK_XP[x.rank])+' G</span></li>';}).join("")+'</ul><div class="row"><button class="btn ghost grow" data-a="close">Keep mine</button>'+(ch?'<button class="btn primary" data-a="applyranks">Apply</button>':'')+'</div>');
-    play("notify");
-  },function(e){openModal('<span class="tag">Claude ranking</span><p>'+esc(aiError(e)||"Cancelled.")+'</p><div class="row"><button class="btn" data-a="close">Close</button></div>');});
 }
 function evolveForm(q){
   play("open");var ni=RANKS.indexOf(q.rank),next=RANKS[Math.min(RANKS.length-1,ni+1)];
@@ -2669,6 +2698,10 @@ function handleAction(b){
   else if(a==="savepast"){var pm=document.getElementById("pm").value,pw=parseInt(document.getElementById("pw").value,10);if(!pm||isNaN(pw))return;S.battle.past=S.battle.past.filter(function(p){return p.m!==pm;});S.battle.past.push({m:pm,w:Math.min(pw,daysIn(pm)),n:daysIn(pm)});save();closeModal();render();play("notify");}
   else if(a==="alloc"){if(!R||R.points<1)return;var s=b.getAttribute("data-s");S.alloc[s]=(S.alloc[s]||0)+1;save();render();play("complete");toast("System",STAT_NAMES[s]+" +1");}
   else if(a==="rankall")rankAllQuests();
+  else if(a==="manopen"){if(view.manualPrompt)openClaude(view.manualPrompt);toast("Ask Claude","Question copied. Paste it in Claude if needed.");}
+  else if(a==="manparse"){var rt=(document.getElementById("manreply")||{}).value||"",qs2=view.manualQs||[],out2=[];
+    rt.split(/\n/).forEach(function(line){var m=line.match(/^\s*\**\s*(\d+)\s*[:.)\-]\s*\**\s*(SSS|SS|S|A|B|C|D|E)\b\**\s*[-–—:]?\s*(.*)$/i);if(!m)return;var q=qs2[+m[1]-1];var rk=m[2].toUpperCase();if(RANKS.indexOf(rk)<0)rk="S";if(q)out2.push({id:q.id,name:q.name,from:q.rank,rank:rk,why:m[3].trim().slice(0,80)});});
+    if(!out2.length){toast("Ask Claude","Couldn't read ranks from that reply. Paste Claude's full answer.");play("error");return;}showRankProposal(out2);play("notify");}
   else if(a==="applyranks"){var pr=view.rankProposal||[];var before=derive();pr.forEach(function(x){var q=find(S.quests,x.id);if(q&&x.rank)q.rank=x.rank;});view.rankProposal=null;closeModal();afterChange(before,"System","Quest ranks updated.","notify");}
   else if(a==="tick"){var tq=find(S.quests,id),ti=+b.getAttribute("data-i"),td=today();if(!tq)return;S.log[td]=S.log[td]||{};var arr=S.log[td]["_c:"+id]||[],ix=arr.indexOf(ti);if(ix>=0)arr.splice(ix,1);else arr.push(ti);S.log[td]["_c:"+id]=arr;save();
     var Ls=planLines(tq,td)||[],need=Ls.filter(function(l){return l.charAt(0)!=="#";}).length,got=arr.filter(function(i){return Ls[i]&&Ls[i].charAt(0)!=="#";}).length;
