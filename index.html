@@ -186,6 +186,19 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .tcost{color:var(--gold);display:inline-flex;align-items:center;gap:3px}
 .item.tlock .swatch{filter:grayscale(.7) brightness(.6)}.item.tlock .item-name{opacity:.7}
 .addpray{display:block;margin:10px 0 2px;font-size:.82rem}
+.modal.tutm{max-width:420px}
+.tut{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.tut-ic{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--glow);box-shadow:0 0 18px rgba(var(--g),.45);color:var(--glow)}.tut-ic svg{width:26px;height:26px}
+.tut small{font-family:var(--display);letter-spacing:.2em;color:var(--muted);font-size:.66rem}.tut h2{margin:0}
+.tut p{margin:0;color:var(--muted);line-height:1.5;font-size:.95rem}.tut p b{color:var(--text)}
+.tdots{display:flex;gap:6px;margin:4px 0 6px}.tdots i{width:7px;height:7px;border-radius:50%;background:rgba(var(--g),.25)}.tdots i.on{background:var(--glow);box-shadow:0 0 8px var(--glow);width:18px;border-radius:4px}
+.tut .row{width:100%}
+.tdemo{display:flex;gap:8px;align-items:center;justify-content:center;margin:6px 0;padding:10px 14px;border:1px solid rgba(var(--g),.25);border-radius:8px;background:rgba(0,0,0,.3);font-family:var(--display)}
+.tdemo.lv b{color:var(--glow);font-size:1.1rem}.tdemo.lv i{width:80px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--glow) 30%,rgba(var(--g),.2) 30%)}.tdemo.lv span{font-size:.72rem;color:var(--muted)}
+.tdemo.q .sq{width:20px;height:20px;border:1.5px solid var(--glow);border-radius:4px}.tdemo.q .mn{font-size:.62rem;letter-spacing:.12em;color:var(--gold);border:1px solid rgba(255,204,85,.7);border-radius:10px;padding:2px 7px}.tdemo.q b{font-family:inherit}.tdemo.q em{font-style:normal;font-size:.72rem;color:var(--glow)}
+.tdemo.rk i{font-style:normal;font-weight:700;width:24px;height:24px;display:grid;place-items:center;border:1px solid currentColor;border-radius:3px}
+.tdemo.hearts span{color:#ff4d6d;font-size:1.2rem}
+.tdemo.tabs span{font-size:.74rem;letter-spacing:.08em;padding:4px 8px;border:1px solid rgba(var(--g),.35);border-radius:4px;color:var(--text)}
 .rankall{display:inline-flex;align-items:center;gap:6px;margin:-4px 0 12px;font-size:.82rem}.rankall svg{width:14px;height:14px}
 .rklist{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
@@ -2408,7 +2421,8 @@ function questForm(kind,item){
     var prompt=isG?"I use a habit tracker game. Rank this one-time GOAL by how big it is: \""+nm+"\". E: a day's work. D: a few days. C: a few weeks. B: a month or more. A: several months. S: a year-scale achievement. Also pick the stat it trains from STR (strength), VIT (health, sleep, food), AGI (martial arts, cardio, sport), INT (reading, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection).\n\nReply in exactly this format and nothing else:\nRank: C\nStat: WIL":
       "I use a habit tracker game. Rank this daily habit by how hard it is to do every single day for an ordinary adult: \""+nm+(A&&A.value?" ("+A.value+" "+(U?U.value:"")+")":"")+"\". "+CL_SCALE+" Also pick the stat it trains from STR (strength), VIT (health, sleep, food), AGI (martial arts, cardio, sport), INT (reading, study, skills), WIL (discipline, focus, creating content), SPI (prayer, meditation, reflection), and give the smallest mini version that takes under 2 minutes.\n\nReply in exactly this format and nothing else:\nRank: D\nStat: SPI\nMini: 1 minute";
     openClaude(prompt);
-    sugg.innerHTML='<div class="manbox"><span>Question copied and Claude opened. Paste Claude\'s reply here:</span><textarea id="manone" rows="3" placeholder="Rank: C&#10;Stat: STR&#10;Mini: 1 set"></textarea><button type="button" class="btn sm primary" id="manapply">Apply</button></div>';
+    sugg.innerHTML='<div class="manbox"><span>Question copied and Claude opened. Paste Claude\'s reply here:</span><button type="button" class="btn primary" id="manpaste">Paste Claude\'s reply</button><textarea id="manone" rows="3" placeholder="Or paste it here: Rank: C, Stat: STR, Mini: 1 set"></textarea><button type="button" class="btn sm" id="manapply">Apply</button></div>';
+    document.getElementById("manpaste").addEventListener("click",function(){readClip(function(t){if(t){document.getElementById("manone").value=t;document.getElementById("manapply").click();}});});
     document.getElementById("manapply").addEventListener("click",function(){var r=parseOneRank(document.getElementById("manone").value);
       if(!r.rank&&!r.stat){toast("Ask Claude","Couldn't find a rank in that reply.");play("error");return;}
       if(r.stat&&STATS.indexOf(r.stat)>=0){statEl.value=r.stat;statTouched=true;}if(r.rank){rankEl.value=r.rank;if(typeof updRk==="function")updRk();}
@@ -2452,11 +2466,12 @@ function openClaude(prompt){try{if(navigator.clipboard)navigator.clipboard.write
   var url="https://claude.ai/new?q="+encodeURIComponent(prompt);var w=window.open(url,"_blank");if(!w)location.href=url;}
 function parseOneRank(t){t=String(t||"");var r=(t.match(/rank\s*[:\-=]?\s*\**\s*(SSS|SS|S|A|B|C|D|E)\b/i)||[])[1],s=(t.match(/stat\s*[:\-=]?\s*\**\s*(STR|VIT|AGI|INT|WIL|SPI)\b/i)||[])[1],m=(t.match(/mini\s*[:\-=]\s*\**\s*([^\n*]+)/i)||[])[1];
   r=r&&r.toUpperCase();if(r&&RANKS.indexOf(r)<0)r="S";return {rank:r||null,stat:s?s.toUpperCase():null,mini:m?m.trim().slice(0,60):null};}
+function readClip(cb){if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(function(t){if(!t||!t.trim()){toast("Ask Claude","Clipboard is empty. Copy Claude's reply first.");cb("");return;}cb(t);},function(){toast("Ask Claude","Paste it into the box instead.");cb("");});}else{toast("Ask Claude","Paste it into the box instead.");cb("");}}
 function rankAllManual(qs){
   var list=qs.map(function(q,i){return (i+1)+". "+q.name+(q.amt!=null?" ("+fmtAmt(qAmount(q))+" "+(q.unit||"")+")":"");}).join("\n");
   var prompt="I use a habit tracker game. Rank each daily habit below by how hard it is to do every single day for an ordinary adult, considering time, intensity and willpower. "+CL_SCALE+"\n\nHabits:\n"+list+"\n\nReply with one line per habit in exactly this format and nothing else:\n1: C - short reason";
   view.manualPrompt=prompt;
-  openModal('<span class="tag">Ask Claude</span><h2>Rank my quests</h2><ol class="mansteps"><li>Tap <b>Open Claude</b>. The question is copied for you, so paste it if Claude opens empty.</li><li>Copy Claude\'s whole reply.</li><li>Paste it below and tap <b>Check ranks</b>.</li></ol><button class="btn primary" data-a="manopen" style="width:100%">'+ICONS.spark+' Open Claude</button><textarea id="manreply" rows="6" placeholder="Paste Claude\'s reply here"></textarea><div class="row"><button class="btn ghost grow" data-a="close">Cancel</button><button class="btn primary" data-a="manparse">Check ranks</button></div>');
+  openModal('<span class="tag">Ask Claude</span><h2>Rank my quests</h2><ol class="mansteps"><li>Tap <b>Open Claude</b>. The question is copied for you, so paste it if Claude opens empty.</li><li>Copy Claude\'s whole reply.</li><li>Come back and tap <b>Paste Claude\'s reply</b>.</li></ol><button class="btn primary" data-a="manopen" style="width:100%">'+ICONS.spark+' Open Claude</button><button class="btn" data-a="manpaste" style="width:100%;margin-top:8px">Paste Claude\'s reply</button><textarea id="manreply" rows="5" placeholder="Or paste Claude\'s reply here"></textarea><div class="row"><button class="btn ghost grow" data-a="close">Cancel</button><button class="btn primary" data-a="manparse">Check ranks</button></div>');
   view.manualQs=qs;
 }
 function rankAllQuests(){
@@ -2473,6 +2488,19 @@ function showRankProposal(out){
     view.rankProposal=out;
     var ch=out.filter(function(x){return x.from!==x.rank;}).length;
     openModal('<span class="tag">Claude ranking</span><h2>'+(ch?ch+' rank change'+(ch>1?'s':'')+' suggested':'Your ranks look right')+'</h2><ul class="rklist">'+out.map(function(x){var d=x.from!==x.rank;return '<li class="'+(d?'chg':'')+'"><div><b>'+esc(x.name)+'</b><small>'+esc(x.why)+'</small></div><span class="rkto"><i class="r-'+x.from+'">'+x.from+'</i>'+(d?'→<i class="r-'+x.rank+'">'+x.rank+'</i>':'')+'</span><span class="sub">+'+RANK_XP[x.rank]+' XP · +'+goldFor(x.rank,RANK_XP[x.rank])+' G</span></li>';}).join("")+'</ul><div class="row"><button class="btn ghost grow" data-a="close">Keep mine</button>'+(ch?'<button class="btn primary" data-a="applyranks">Apply</button>':'')+'</div>');
+}
+var TUT=[
+  {ic:"quests",t:"Welcome, Hunter",x:"Turn your real habits into a game. Do them in real life, tick them here, and your hunter levels up.",demo:'<div class="tdemo lv"><b>LV 1</b><i></i><span>E-RANK</span></div>'},
+  {ic:"quests",t:"Tick your quests",x:"Tap the square when you finish a habit. Short on time? Tap <b>MINI</b> to do the small version for half the reward.",demo:'<div class="tdemo q"><span class="sq"></span><span class="mn">MINI</span><b>Push-ups</b><em>+15 XP</em></div>'},
+  {ic:"store",t:"Harder = more rewards",x:"Each quest has a rank from E to S. Harder habits pay much more XP and gold. Not sure? Tap a quest and use <b>Ask Claude to rank it</b>.",demo:'<div class="tdemo rk"><i class="r-E">E</i><i class="r-D">D</i><i class="r-C">C</i><i class="r-B">B</i><i class="r-A">A</i><i class="r-S">S</i></div>'},
+  {ic:"battle",t:"Keep the streak",x:"Clear every quest in a day for a bonus. Miss a day and you lose EXP, but you get 3 hearts a month to make up for it.",demo:'<div class="tdemo hearts"><span>♥</span><span>♥</span><span>♥</span></div>'},
+  {ic:"dungeon",t:"Spend and grow",x:"Spend gold in the <b>Store</b> on gear and themes. At level 10 the <b>Dungeon</b> opens, where your quests earn keys to fight monsters.",demo:'<div class="tdemo tabs"><span>Store</span><span>Dungeon</span><span>Hunter</span></div>'}
+];
+function showTutorial(i){
+  i=Math.max(0,Math.min(TUT.length-1,i||0));view.tut=i;var T=TUT[i],last=i===TUT.length-1;
+  openModal('<div class="tut"><div class="tut-ic">'+(ICONS[T.ic]||"")+'</div><small>'+(i+1)+' / '+TUT.length+'</small><h2>'+T.t+'</h2>'+T.demo+'<p>'+T.x+'</p>'+
+    '<div class="tdots">'+TUT.map(function(_,k){return '<i class="'+(k===i?'on':'')+'"></i>';}).join("")+'</div>'+
+    '<div class="row">'+(i?'<button class="btn ghost" data-a="tutgo" data-id="'+(i-1)+'">Back</button>':'<button class="btn ghost" data-a="tutdone">Skip</button>')+'<button class="btn primary grow" data-a="'+(last?'tutdone':'tutgo')+'" data-id="'+(i+1)+'">'+(last?'Start hunting':'Next')+'</button></div></div>','tutm');
 }
 function evolveForm(q){
   play("open");var ni=RANKS.indexOf(q.rank),next=RANKS[Math.min(RANKS.length-1,ni+1)];
@@ -2599,6 +2627,7 @@ function settings(){
     '<div class="field"><label for="f-bk">Backup</label><textarea id="f-bk" class="mono" spellcheck="false">'+esc(JSON.stringify(S))+'</textarea></div>'+
     '<p class="sub">Copy this text somewhere safe. To restore, paste a backup and press Restore.</p>'+
     '<div class="row"><button class="btn" data-a="copybk">Copy backup</button><button class="btn" data-a="restore">Restore</button></div>'+
+    '<div class="row" style="justify-content:flex-start;margin:4px 0 10px"><button class="btn" data-a="tutopen">How to play</button></div>'+
     '<div class="field"><label>Preview mode</label></div><div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn'+(S.unlockAll?' primary':'')+'" data-a="previewmode">'+(S.unlockAll?'On: everything unlocked':'Off: unlock by rank')+'</button></div><p class="sub">Preview mode unlocks all gear and skills so you can try them. Turn it off to earn them for real.</p>'+
     '<div class="field"><label>Backup</label></div><div class="row" style="justify-content:flex-start;margin-top:6px;flex-wrap:wrap"><button class="btn" data-a="exportbk">Export backup</button><button class="btn" data-a="importbk">Import backup</button></div><p class="sub">Your progress lives on this device. Export a backup now and then, and import it to move to a new phone.</p>'+
     '<div class="row"><button class="btn danger grow" data-a="reset">Reset everything</button><button class="btn ghost" data-a="close">Close</button></div>');
@@ -2693,8 +2722,12 @@ function handleAction(b){
   else if(a==="savepast"){var pm=document.getElementById("pm").value,pw=parseInt(document.getElementById("pw").value,10);if(!pm||isNaN(pw))return;S.battle.past=S.battle.past.filter(function(p){return p.m!==pm;});S.battle.past.push({m:pm,w:Math.min(pw,daysIn(pm)),n:daysIn(pm)});save();closeModal();render();play("notify");}
   else if(a==="alloc"){if(!R||R.points<1)return;var s=b.getAttribute("data-s");S.alloc[s]=(S.alloc[s]||0)+1;save();render();play("complete");toast("System",STAT_NAMES[s]+" +1");}
   else if(a==="addprayers"){var bp=derive();S.quests=prayerQuests(today()).concat(S.quests);afterChange(bp,"System","Prayers panel added.","notify");}
+  else if(a==="tutgo"){showTutorial(+id);play("tab");}
+  else if(a==="tutdone"){S.tutDone=1;save();closeModal();play("level");}
+  else if(a==="tutopen"){showTutorial(0);}
   else if(a==="rankall")rankAllQuests();
   else if(a==="manopen"){if(view.manualPrompt)openClaude(view.manualPrompt);toast("Ask Claude","Question copied. Paste it in Claude if needed.");}
+  else if(a==="manpaste"){readClip(function(t){var ta=document.getElementById("manreply");if(t&&ta){ta.value=t;var bt=document.querySelector('[data-a="manparse"]');if(bt)handleAction(bt);}});}
   else if(a==="manparse"){var rt=(document.getElementById("manreply")||{}).value||"",qs2=view.manualQs||[],out2=[];
     rt.split(/\n/).forEach(function(line){var m=line.match(/^\s*\**\s*(\d+)\s*[:.)\-]\s*\**\s*(SSS|SS|S|A|B|C|D|E)\b\**\s*[-–—:]?\s*(.*)$/i);if(!m)return;var q=qs2[+m[1]-1];var rk=m[2].toUpperCase();if(RANKS.indexOf(rk)<0)rk="S";if(q)out2.push({id:q.id,name:q.name,from:q.rank,rank:rk,why:m[3].trim().slice(0,80)});});
     if(!out2.length){toast("Ask Claude","Couldn't read ranks from that reply. Paste Claude's full answer.");play("error");return;}showRankProposal(out2);play("notify");}
@@ -2816,6 +2849,7 @@ setInterval(function(){
 try{if(S.fresh)localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}
 render();checkDay();connect();
 if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+if(!S.tutDone)setTimeout(function(){if(!ov.classList.contains('open'))showTutorial(0);else{var iv=setInterval(function(){if(!ov.classList.contains('open')&&!S.tutDone){clearInterval(iv);showTutorial(0);}else if(S.tutDone)clearInterval(iv);},800);}},600);
 })();
 </script>
 </body>
