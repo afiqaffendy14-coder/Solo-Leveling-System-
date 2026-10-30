@@ -743,7 +743,7 @@ var SETS=[
   {id:"dawn",rank:"A",name:"Dawn Paladin",desc:"White-gold plate, halo, Stormcaller.",gear:{outfit:"paladin",head:"halo",weapon:"stormspear",aura:"goldaura",bg:"gate",cape:true},look:{mark:"crownrunes",markColor:"gold",pattern:"none"}},
   {id:"voidknight",rank:"S",name:"Void Knight",desc:"Void helm, twin night claws, titan greatsword.",gear:{outfit:"voidk",head:"voidhelm",armR:"shadowclaw",armL:"shadowclaw",weapon:"abyssal",aura:"violet",bg:"gate",cape:true},look:{mark:"twinslit",markColor:"violet",pattern:"none"}},
   {id:"monarch",rank:"SS",name:"Shadow Monarch",desc:"Crown, regalia, twin Fangs of Night, lightning veins.",gear:{outfit:"monarch",head:"crown",weapon:"nightfang",weaponSide:"both",aura:"violet",bg:"throne",veins:true},look:{mark:"crownrunes",markColor:"violet",pattern:"none"}},
-  {id:"null",rank:"SSS",name:"Null Sovereign",desc:"A void core, crystal claws, crown of shards and orbiting worlds.",gear:{outfit:"nullrobe",head:"voidcrown",arm:"voidclaw",armSide:"both",aura:"orbit",bg:"throne"},look:{mark:"sigil",markColor:"violet",pattern:"cosmic"}}
+  {id:"null",rank:"SSS",name:"Null Sovereign",desc:"A void core, crystal claws, crown of shards and orbiting worlds.",gear:{outfit:"nullrobe",head:"voidcrown",arm:"voidclaw",armSide:"both",aura:"orbit",bg:"throne"},look:{mark:"constellation",markColor:"violet",pattern:"cosmic"}}
 ];
 function setGear(st){var g={outfit:"bare",head:"nohead",armR:"noarm",armL:"noarm",weapon:"none",weaponSide:"right",aura:"noaura",bg:"grid",cape:false,scarf:false,veins:false};Object.keys(st.gear).forEach(function(k){if(k!=="arm"&&k!=="armSide")g[k]=st.gear[k];});
   if(st.gear.arm){var sd=st.gear.armSide||"right";g.armR=sd==="left"?"noarm":st.gear.arm;g.armL=sd==="right"?"noarm":st.gear.arm;}return g;}
@@ -754,7 +754,7 @@ var SLOTS=[["sets","Sets"],["outfit","Armor"],["head","Head"],["arm","Arm"],["we
 var TRIGGERS=["Bored","Stressed","Tired","Alone","Late night","Phone in bed","Sad","Travel"];
 var LOOK_OPTS={
   body:{obsidian:"Obsidian (black)",porcelain:"Porcelain (white)",ash:"Ash grey",midnight:"Midnight blue"},
-  mark:{none:"Blank",runeeyes:"Rune eyes",crownrunes:"Rune crown",sigil:"Sigil",fracture:"Fracture",tribal:"Tribal mask",wings:"Winged eyes",constellation:"Constellation",hexvisor:"Hex visor",twinslit:"Twin slits",angry:"Angry slits",tvisor:"T-visor",visor:"Visor line",split:"Split line",crescent:"Crescent eyes",xmark:"X mark",rune:"Rune"},
+  mark:{none:"Blank",runeeyes:"Rune eyes",crownrunes:"Rune crown",fracture:"Fracture",tribal:"Tribal mask",wings:"Winged eyes",constellation:"Constellation",hexvisor:"Hex visor",twinslit:"Twin slits",angry:"Angry slits",tvisor:"T-visor",visor:"Visor line",split:"Split line",crescent:"Crescent eyes",xmark:"X mark",rune:"Rune"},
   pattern:{none:"None",tribal:"Tribal markings",circuit:"Circuit lines",cosmic:"Cosmic stars"},
   markColor:{white:"White",blue:"Blue",teal:"Teal",gold:"Gold",red:"Red",violet:"Violet"},
   build:{slim:"Slim",average:"Average",broad:"Broad"}
@@ -829,7 +829,7 @@ function migrate(o){
     f.fresh=true;f.migratedNote="Fresh start. Everything is back to level 0 with one example quest and one example gate.";
     return f;
   }
-  if(!o.alloc)o.alloc={};
+  if(o.look&&o.look.mark==="sigil")o.look.mark="runeeyes";if(!o.alloc)o.alloc={};
   STATS.forEach(function(s){if(o.alloc[s]==null)o.alloc[s]=0;});
   if(!o.purchases)o.purchases=[];
   if(!o.themes)o.themes=["azure"];
@@ -1477,7 +1477,6 @@ function markSVG(m,mc,id){
   if(m==="angry")return G("M104,51 L116,58 M136,51 L124,58",3.8);
   if(m==="xmark")return G("M112,49 L128,65 M128,49 L112,65",3.4);
   if(m==="split")return G("M120,34 L120,47 M105,57 Q120,45 135,57",2.4);
-  if(m==="sigil")return '<circle cx="120" cy="54" r="10" fill="none" stroke="'+mc+'" stroke-width="1.6" filter="url(#gs'+id+')"/><circle cx="120" cy="54" r="10" fill="none" stroke="#fff" stroke-width=".6"/>'+G("M120,46 L120,62 M114,50 L126,58 M126,50 L114,58",1.6)+[0,60,120,180,240,300].map(function(a){var q=a*Math.PI/180;return '<circle cx="'+(120+Math.cos(q)*13.5).toFixed(1)+'" cy="'+(54+Math.sin(q)*13.5).toFixed(1)+'" r="1" fill="'+mc+'"/>';}).join("");
   if(m==="runeeyes")return rune(110,55,0)+rune(130,55,1)+G("M106,64 Q120,68 134,64",1.2);
   if(m==="tribal")return G("M98,48 C104,42 112,44 117,52 M98,64 C104,58 110,58 115,60 M142,48 C136,42 128,44 123,52 M142,64 C136,58 130,58 125,60",1.8)+G("M106,55 L115,56 M134,55 L125,56",3);
   if(m==="fracture")return G("M120,34 L116,44 L122,50 L114,60 L118,70 L112,80 M116,44 L107,41 M122,50 L132,47 L136,56 M114,60 L104,63 M118,70 L126,74",1.8)+G("M106,55 L113,56 M134,55 L127,56",3);
