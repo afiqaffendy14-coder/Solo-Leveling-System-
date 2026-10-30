@@ -220,6 +220,7 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .rklist{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
 .rklist b{font-size:.88rem}.rklist small{display:block;font-size:.72rem;color:var(--muted)}.rkto{font-family:var(--display);display:flex;gap:4px;align-items:center;grid-row:span 2}.rkto i{font-style:normal;font-weight:700}.rklist .sub{font-size:.7rem}
+button.bx{font:inherit;cursor:pointer;padding:0;background:transparent;color:var(--muted)}button.bx:active{transform:scale(.92)}.bhint{margin:10px 0 0;font-size:.76rem}
 .setsrow{display:grid;grid-template-columns:70px auto 1fr;gap:8px;align-items:center}.setsrow input{min-width:0}.setsrow span{color:var(--muted);font-size:.85rem}
 .qsets{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;padding:10px 4px 2px;border-top:1px solid rgba(var(--g),.12)}
 .qs-l{font-family:var(--display);font-size:.78rem;letter-spacing:.06em;color:var(--glow)}.qs-l small{color:var(--muted);font-family:inherit;letter-spacing:0}
@@ -957,7 +958,7 @@ function derive(){
     shields:boughtShield-shieldsUsed,potions:boughtPotion-potionsUsed,rewardsClaimed:rewardsClaimed,battle:battleStats(),
     evolutions:S.events.filter(function(x){return x.type==="improvement"&&x.auto;}).length,gearOwned:S.unlockAll?GEAR.length:S.owned.length};
   var cdays=0;Object.keys(days).forEach(function(d){if(days[d].state==="clear")cdays++;});
-  var bw=0;Object.keys(S.battle.days).forEach(function(d){if(S.battle.days[d]==="w")bw++;});
+  var bw=0;Object.keys(S.battle.days).forEach(function(d){if(S.battle.days[d]==="w"&&d>=S.created)bw++;});
   var D=S.dungeon||{};r.keys=Math.max(0,quests+cdays*2+bw+(D.bonusKeys||0)-(D.used||0));r.dfloor=D.floor||0;r.bossKills=D.bosses||0;r.armyN=armyCount();
   r.power=STATS.reduce(function(a,s){return a+stats[s];},0)*10+lvl*25+armyPower();
   var mm={};Object.keys(days).forEach(function(d){if(d>=t)return;var m=mkey(d),x=mm[m]=mm[m]||{n:0,ok:0};if(days[d].req){x.n++;if(["clear","rest","shield","redeemed"].indexOf(days[d].state)>=0)x.ok++;}});
@@ -1789,8 +1790,8 @@ function tabBattle(){
   var mm=B.months[m]||{w:0,l:0},elapsed=parseKey(t).getDate();
   h+='<section class="win"><div class="win-h"><span class="tag">'+esc(monthName(m))+'</span></div>';
   h+='<div class="kv" style="margin-bottom:16px;grid-template-columns:repeat(3,minmax(0,1fr))"><div><small>STREAK</small><b>'+B.streak+'</b></div><div><small>BEST</small><b>'+B.best+'</b></div><div><small>THIS MONTH</small><b>'+mm.w+'/'+elapsed+'</b></div></div><div class="bgrid">';
-  for(var i=1;i<=daysIn(m);i++){var d=m+"-"+pad(i),s=S.battle.days[d];h+='<div class="bx'+(s==="w"?' w':s==="l"?' l':'')+(d>t?' f':'')+(d===t?' t':'')+'" title="'+fmtDate(d)+'">'+(s==="l"?'×':i)+'</div>';}
-  h+='</div></section>';
+  for(var i=1;i<=daysIn(m);i++){var d=m+"-"+pad(i),s=S.battle.days[d],tag=d<=t?'button':'div';h+='<'+tag+' class="bx'+(s==="w"?' w':s==="l"?' l':'')+(d>t?' f':'')+(d===t?' t':'')+'"'+(d<=t?' data-a="bcell" data-id="'+d+'"':'')+' title="'+fmtDate(d)+'">'+(s==="l"?'×':i)+'</'+tag+'>';}
+  h+='</div><p class="sub bhint">Tap a past day to fill it in: once for a win, twice for a loss, three times to clear.</p></section>';
 
   var rows={};S.battle.past.forEach(function(p){rows[p.m]={w:p.w,n:p.n};});
   Object.keys(B.months).forEach(function(k){var x=B.months[k];rows[k]={w:x.w,n:k===m?elapsed:daysIn(k)};});
@@ -2810,6 +2811,7 @@ function handleAction(b){
   else if(a==="rest"){before=derive();e=S.log[t]=S.log[t]||{};if(e._rest){delete e._rest;afterChange(before,"System","Rest day cancelled.","undo");}else{e._rest=true;afterChange(before,"System","Rest day taken. Recover well, hunter.","shield");}}
   else if(a==="bwin"){before=derive();S.battle.days[t]="w";delete S.battle.notes[t];flash();afterChange(before,"Victory","+"+VICTORY_XP+" EXP. Another battle won.","victory");}
   else if(a==="blose"){before=derive();S.battle.days[t]="l";afterChange(before,null,null,"soft");loseForm(t);}
+  else if(a==="bcell"){var bd=id;if(!bd||bd>t)return;before=derive();var cs=S.battle.days[bd];if(!cs)S.battle.days[bd]="w";else if(cs==="w")S.battle.days[bd]="l";else{delete S.battle.days[bd];delete S.battle.notes[bd];}afterChange(before,null,null,!cs?"press":cs==="w"?"soft":"undo");}
   else if(a==="bclear"){before=derive();delete S.battle.days[t];delete S.battle.notes[t];afterChange(before,null,null,"undo");}
   else if(a==="bnote")loseForm(id);
   else if(a==="savenote"){
