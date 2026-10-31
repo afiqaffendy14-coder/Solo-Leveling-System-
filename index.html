@@ -233,6 +233,8 @@ button.bx{font:inherit;cursor:pointer;padding:0;background:transparent;color:var
 .phlevel.ok .phl-h,.phlevel.ok .phl-v{background:#6fdc8c;box-shadow:0 0 10px #6fdc8c}
 .phlevel{flex-direction:row!important;justify-content:center;gap:12px!important}
 .phal span small{display:block;font-size:.66rem;color:var(--muted)}
+.phqual{display:flex;flex-direction:column;gap:3px;align-items:center;margin:-4px 0 8px;font-size:.74rem}.phqual span{padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.4)}
+.phqual .good{color:#6fdc8c}.phqual .meh{color:#ffcc55}.phqual .bad{color:#ff6b81}
 .modal.phcamm{max-width:440px;padding-bottom:10px}
 .phcam{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:8px;overflow:hidden;margin:8px 0}
 .phcam video{width:100%;height:100%;object-fit:cover;display:block}.phcam.mirror video,.phcam.mirror .phghost{transform:scaleX(-1)}
@@ -2392,17 +2394,31 @@ function phTx(mode,fn){return phDB().then(function(db){return new Promise(functi
 function phPut(rec){return phTx("readwrite",function(st){return st.put(rec);});}
 function phDel(id){return phTx("readwrite",function(st){return st.delete(id);});}
 function phGet(id){return phTx("readonly",function(st){return st.get(id);});}
-function phList(album){return phTx("readonly",function(st){var ix=st.index("album"),r1=ix.getAll(album),r2=album==="Full body"?ix.getAll("Body"):null;return {get result(){return (r1.result||[]).concat(r2&&r2.result||[]);}};}).then(function(a){return (a||[]).sort(function(x,y){return x.date<y.date?-1:1;});});}
-var PH_KINDS=[["upper","Close-up"],["flex","Close-up flexed"],["full","Full body"],["legs","Legs"],["back","Back"],["face","Face"]];
-function phAlbums(){if(!S.photoAlbums||!S.photoAlbums.length)S.photoAlbums=["Upper body","Upper body flexed","Full body","Legs","Back","Face"];
+function phList(album){return phTx("readonly",function(st){var ix=st.index("album"),r1=ix.getAll(album),r2=album==="Full body"?ix.getAll("Body"):album==="Legs front"?ix.getAll("Legs"):null;return {get result(){return (r1.result||[]).concat(r2&&r2.result||[]);}};}).then(function(a){return (a||[]).sort(function(x,y){return x.date<y.date?-1:1;});});}
+var PH_KINDS=[["upper","Upper body"],["flex","Upper body flexed"],["side","Upper body side"],["back","Back"],["backflex","Back flexed"],["legs","Legs front"],["legsback","Legs back"],["legsside","Legs side"],["face","Face"],["full","Full body"]];
+function phAlbums(){if(!S.photoAlbums||!S.photoAlbums.length)S.photoAlbums=["Upper body","Upper body flexed","Upper body side","Back","Back flexed","Legs front","Legs back","Legs side","Face"];
   if(!S.phV2){S.phV2=1;var i=S.photoAlbums.indexOf("Body");if(i>=0)S.photoAlbums.splice(i,1,"Full body");["Upper body","Upper body flexed"].reverse().forEach(function(n){if(S.photoAlbums.indexOf(n)<0)S.photoAlbums.unshift(n);});}
+  if(!S.phV5){S.phV5=1;S.photoAlbums=["Upper body","Upper body flexed","Upper body side","Back","Back flexed","Legs front","Legs back","Legs side","Face"].concat(S.photoAlbums.filter(function(n){return ["Upper body","Upper body flexed","Upper body side","Back","Back flexed","Legs front","Legs back","Legs side","Face","Full body","Legs","Body"].indexOf(n)<0;}));S.phV4=1;S.phV3=1;S.phV2=1;}
+  if(!S.phV4){S.phV4=1;if(S.photoAlbums.indexOf("Back flexed")<0){var bi=S.photoAlbums.indexOf("Back");S.photoAlbums.splice(bi>=0?bi+1:S.photoAlbums.length,0,"Back flexed");}}
   if(!S.phV3){S.phV3=1;var fi=S.photoAlbums.indexOf("Full body");["Legs","Back"].forEach(function(n,k){if(S.photoAlbums.indexOf(n)<0)S.photoAlbums.splice(fi>=0?fi+1+k:S.photoAlbums.length,0,n);});}
   return S.photoAlbums;}
-function phKind(al){var k=(S.photoKinds||{})[al];if(k)return k;return /face|muka|skin/i.test(al)?"face":/leg|thigh|calf|calves|quad/i.test(al)?"legs":/back|lat/i.test(al)?"back":/flex/i.test(al)?"flex":/full/i.test(al)?"full":/upper|close|torso|chest|arm|ab/i.test(al)?"upper":"full";}
+function phKind(al){var k=(S.photoKinds||{})[al];if(k)return k;var sd=/side|profile/i.test(al),bk=/back|behind|rear/i.test(al);if(/leg|thigh|calf|calves|quad|hamstring|glute/i.test(al))return sd?"legsside":bk?"legsback":"legs";if(sd&&!/face/i.test(al))return "side";return /face|muka|skin/i.test(al)?"face":/leg|thigh|calf|calves|quad/i.test(al)?"legs":/back|lat/i.test(al)?(/flex/i.test(al)?"backflex":"back"):/flex/i.test(al)?"flex":/full/i.test(al)?"full":/upper|close|torso|chest|arm|ab/i.test(al)?"upper":"full";}
 function phAlbum(){var a=phAlbums();if(a.indexOf(view.phAlbum)<0)view.phAlbum=a[0];return view.phAlbum;}
 var PH_RANGES=[["week","Week",7],["month","Month",30],["year","Year",365],["all","All",0]];
 function phRange(list){var r=view.phRange||"month",n=0;PH_RANGES.forEach(function(x){if(x[0]===r)n=x[2];});if(!n)return list;var from=addDays(today(),-(n-1));return list.filter(function(p){return p.date>=from;});}
-function phShrink(file,max){return new Promise(function(res,rej){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){var w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){b?res({blob:b,w:c.width,h:c.height}):rej("encode");},"image/jpeg",.84);};img.onerror=function(){URL.revokeObjectURL(url);rej("decode");};img.src=url;});}
+var PH_AN=null;
+function phAnalyze(src,sw,sh){if(!PH_AN){PH_AN=document.createElement("canvas");PH_AN.width=96;PH_AN.height=128;}var x=PH_AN.getContext("2d",{willReadFrequently:true});x.drawImage(src,0,0,sw||src.videoWidth||src.width,sh||src.videoHeight||src.height,0,0,96,128);
+  var d=x.getImageData(0,0,96,128).data,n=96*128,g=new Float32Array(n),sum=0,hist=new Uint32Array(256);for(var i=0,j=0;i<n;i++,j+=4){var l=.299*d[j]+.587*d[j+1]+.114*d[j+2];g[i]=l;sum+=l;hist[l|0]++;}
+  var lv=0,lm=0,cnt=0;for(var yy=1;yy<127;yy++)for(var xx=1;xx<95;xx++){var k=yy*96+xx,L=4*g[k]-g[k-1]-g[k+1]-g[k-96]-g[k+96];lm+=L;lv+=L*L;cnt++;}lm/=cnt;
+  var pc=function(q){var t=n*q,a=0;for(var b=0;b<256;b++){a+=hist[b];if(a>=t)return b;}return 255;};
+  return {mean:sum/n/255,sharp:lv/cnt-lm*lm,lo:pc(.02),hi:pc(.98)};}
+function phTone(c){var a=phAnalyze(c),lo=Math.min(a.lo,60),hi=Math.max(a.hi,lo+90);if(hi-lo<40)return a;var x=c.getContext("2d"),img=x.getImageData(0,0,c.width,c.height),d=img.data;
+  var m=Math.max(.05,Math.min(.95,(a.mean*255-lo)/(hi-lo))),gm=Math.max(.42,Math.min(1.6,Math.log(.48)/Math.log(m))),lut=new Uint8ClampedArray(256);
+  for(var v=0;v<256;v++){var t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));lut[v]=Math.round(255*Math.pow(t,gm));}
+  var strong=(a.mean<.3||a.mean>.75);for(var i=0;i<d.length;i+=4){if(strong||Math.abs(gm-1)>.05||lo>8||hi<247){d[i]=lut[d[i]];d[i+1]=lut[d[i+1]];d[i+2]=lut[d[i+2]];}}
+  if(a.sharp<40){var w=c.width,hgt=c.height,src=new Uint8ClampedArray(d),amt=.45;for(var yy=1;yy<hgt-1;yy++)for(var xx=1;xx<w-1;xx++){var p=(yy*w+xx)*4;for(var ch=0;ch<3;ch++){var cc=src[p+ch],bl=(src[p-4+ch]+src[p+4+ch]+src[p-w*4+ch]+src[p+w*4+ch])/4;d[p+ch]=cc+amt*(cc-bl);}}}
+  x.putImageData(img,0,0);return a;}
+function phShrink(file,max){return new Promise(function(res,rej){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){var w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);try{phTone(c);}catch(e){}c.toBlob(function(b){b?res({blob:b,w:c.width,h:c.height}):rej("encode");},"image/jpeg",.84);};img.onerror=function(){URL.revokeObjectURL(url);rej("decode");};img.src=url;});}
 function phSave(file,date,tilt){var al=phAlbum();return phShrink(file,1280).then(function(o){var rec={id:al+"|"+date,album:al,date:date,blob:o.blob,w:o.w,h:o.h,t:Date.now()};if(tilt)rec.tilt=tilt;return phPut(rec);}).then(function(){S.photoCount=(S.photoCount||0)+1;save();render();toast("Progress photo",al+" · "+fmtDate(date)+" saved.");play("complete");},function(){toast("Progress photo","That photo couldn't be read. Try another one.");play("error");});}
 function photoSection(){
   var al=phAlbum(),rg=view.phRange||"month";
@@ -2425,12 +2441,16 @@ function phGuideSVG(kind){
   if(kind==="upper")return svg('<path d="M150,22 a38,46 0 1,0 0.1,0Z M128,108 L128,124 C96,128 70,136 58,152 C50,190 52,260 56,392 M172,108 L172,124 C204,128 230,136 242,152 C250,190 248,260 244,392 M92,160 C96,240 100,320 104,392 M208,160 C204,240 200,320 196,392"'+D+'/>'+L(114,"chin")+L(150,"shoulders")+L(360,"waist"));
   if(kind==="flex")return svg('<path d="M150,62 a34,40 0 1,0 0.1,0Z M130,140 L130,152 C112,156 96,160 86,166 L40,170 C26,150 22,118 30,92 C38,78 52,80 56,96 C58,110 60,128 66,140 M170,140 L170,152 C188,156 204,160 214,166 L260,170 C274,150 278,118 270,92 C262,78 248,80 244,96 C242,110 240,128 234,140 M96,176 C100,250 104,320 108,392 M204,176 C200,250 196,320 192,392"'+D+'/>'+L(142,"chin")+L(170,"elbows")+L(360,"waist"));
   if(kind==="legs")return svg('<path d="M92,20 C90,60 92,90 96,120 C100,180 104,240 108,300 L112,380 L140,380 L146,280 L150,150 L154,280 L160,380 L188,380 L192,300 C196,240 200,180 204,120 C208,90 210,60 208,20 Z"'+D+'/>'+L(24,"waist")+L(210,"knees")+L(380,"feet"));
+  if(kind==="side")return svg('<path d="M160,22 a36,46 0 1,0 0.1,0Z M150,112 L148,128 C130,132 118,144 112,164 C104,200 104,260 110,330 L114,392 M172,112 L178,130 C200,140 214,160 216,190 C218,230 206,270 196,300 C190,330 188,360 190,392 M128,170 C122,220 124,280 132,340"'+D+'/>'+L(114,"chin")+L(150,"shoulders")+L(360,"waist"));
+  if(kind==="legsside")return svg('<path d="M118,20 C112,60 108,100 112,140 C116,180 124,200 126,230 C128,270 122,320 120,370 L112,384 L178,384 L170,370 C168,320 170,270 172,230 C176,190 188,150 190,110 C192,70 188,40 182,20 Z"'+D+'/>'+L(24,"waist")+L(225,"knees")+L(384,"feet"));
+  if(kind==="legs"||kind==="legsback")return svg('<path d="M92,20 C90,60 92,90 96,120 C100,180 104,240 108,300 L112,380 L140,380 L146,280 L150,150 L154,280 L160,380 L188,380 L192,300 C196,240 200,180 204,120 C208,90 210,60 208,20 Z"'+D+'/>'+L(24,"waist")+L(210,"knees")+L(380,"feet"));
+  if(kind==="backflex")return svg('<path d="M150,62 a34,40 0 1,0 0.1,0Z M130,140 L130,152 C112,156 96,160 86,166 L40,170 C26,150 22,118 30,92 C38,78 52,80 56,96 C58,110 60,128 66,140 M170,140 L170,152 C188,156 204,160 214,166 L260,170 C274,150 278,118 270,92 C262,78 248,80 244,96 C242,110 240,128 234,140 M96,176 C100,250 104,320 108,392 M204,176 C200,250 196,320 192,392 M150,152 L150,360"'+D+'/>'+L(142,"neck")+L(170,"elbows")+L(360,"waist"));
   if(kind==="back")return svg('<path d="M150,22 a38,46 0 1,0 0.1,0Z M128,108 L128,124 C96,128 70,136 58,152 C50,190 52,260 56,392 M172,108 L172,124 C204,128 230,136 242,152 C250,190 248,260 244,392 M92,160 C96,240 100,320 104,392 M208,160 C204,240 200,320 196,392 M150,124 L150,360"'+D+'/>'+L(114,"neck")+L(150,"shoulders")+L(360,"waist"));
   return svg('<path d="M150,30 a24,28 0 1,0 0.1,0Z M118,88 C100,92 92,100 88,118 L80,210 L92,212 L104,130 L108,214 L104,300 L112,372 L136,372 L146,262 L154,262 L164,372 L188,372 L196,300 L192,214 L196,130 L208,212 L220,210 L212,118 C208,100 200,92 182,88 Z"'+D+'/>'+L(30,"head")+L(372,"feet"));
 }
-var PH_TIPS={face:"Eyes on the blue line, chin on the bottom mark. Look straight ahead.",upper:"Phone at chest height, the same distance every time. Chin and waist on the lines, arms relaxed.",flex:"Same spot and distance as the relaxed shot. Double biceps with elbows on the elbow line.",legs:"Prop the phone at knee height. Waist on the top line, knees and feet on their lines. Use the timer.",back:"Prop the phone at chest height and turn around. Neck, shoulders and waist on the lines. Use the 10 second timer.",full:"Prop the phone at chest height. Head and feet on the lines, centre line through your body. Use the timer."};
+var PH_TIPS={face:"Eyes on the blue line, chin on the bottom mark. Look straight ahead.",upper:"Phone at chest height, the same distance every time. Chin and waist on the lines, arms relaxed.",flex:"Same spot and distance as the relaxed shot. Double biceps with elbows on the elbow line.",side:"Turn sideways, arms relaxed by your sides. Chin, shoulders and waist on the lines. Use the timer.",legsback:"Prop the phone at knee height and turn around. Waist, knees and feet on their lines. Use the 10 second timer.",legsside:"Prop the phone at knee height and turn sideways. Waist, knees and feet on their lines. Use the timer.",legs:"Prop the phone at knee height. Waist on the top line, knees and feet on their lines. Use the timer.",backflex:"Same spot as the relaxed back shot. Turn around, double biceps with elbows on the elbow line. Use the 10 second timer.",back:"Prop the phone at chest height and turn around. Neck, shoulders and waist on the lines. Use the 10 second timer.",full:"Prop the phone at chest height. Head and feet on the lines, centre line through your body. Use the timer."};
 var PH_OK={roll:15,pitch:12},PH_CAM=null;
-function phCamStop(){if(PH_CAM){if(PH_CAM.onMot)window.removeEventListener("devicemotion",PH_CAM.onMot);if(PH_CAM.onOri)window.removeEventListener("deviceorientation",PH_CAM.onOri);if(PH_CAM.stream)PH_CAM.stream.getTracks().forEach(function(t){t.stop();});if(PH_CAM.ghost)URL.revokeObjectURL(PH_CAM.ghost);}PH_CAM=null;}
+function phCamStop(){if(PH_CAM){if(PH_CAM.qi)clearInterval(PH_CAM.qi);if(PH_CAM.onMot)window.removeEventListener("devicemotion",PH_CAM.onMot);if(PH_CAM.onOri)window.removeEventListener("deviceorientation",PH_CAM.onOri);if(PH_CAM.stream)PH_CAM.stream.getTracks().forEach(function(t){t.stop();});if(PH_CAM.ghost)URL.revokeObjectURL(PH_CAM.ghost);}PH_CAM=null;}
 function phTiltUI(){
   if(!PH_CAM||!PH_CAM.tilt)return;var r=PH_CAM.tilt.roll,p=PH_CAM.tilt.pitch,okR=Math.abs(r)<=PH_OK.roll,okP=Math.abs(p)<=PH_OK.pitch,ok=okR&&okP,perfect=Math.abs(r)<=2&&Math.abs(p)<=2;
   var lv=document.getElementById("phlevel"),bub=document.getElementById("phbub"),bv=document.getElementById("phbubv"),tx=document.getElementById("phltxt");if(!lv)return;
@@ -2441,17 +2461,21 @@ function phTiltUI(){
 function phCamera(facing){
   var al=phAlbum(),kind=phKind(al);
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){var fc=document.getElementById("phcam");if(fc){fc.value="";fc.click();}return;}
-  facing=facing||(PH_CAM&&PH_CAM.facing)||(kind==="full"||kind==="legs"||kind==="back"?"environment":"user");
+  facing=facing||(PH_CAM&&PH_CAM.facing)||(/full|legs|back|side/.test(kind)?"environment":"user");
   try{if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission==="function")DeviceMotionEvent.requestPermission().catch(function(){});if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==="function")DeviceOrientationEvent.requestPermission().catch(function(){});}catch(e){}
   var keep=PH_CAM?{ghost:PH_CAM.ghost,timer:PH_CAM.timer,ghostOn:PH_CAM.ghostOn}:null;if(PH_CAM){if(PH_CAM.onMot)window.removeEventListener("devicemotion",PH_CAM.onMot);if(PH_CAM.onOri)window.removeEventListener("deviceorientation",PH_CAM.onOri);if(PH_CAM.stream)PH_CAM.stream.getTracks().forEach(function(t){t.stop();});}
   navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:1706}},audio:false}).then(function(stream){
-    PH_CAM={stream:stream,facing:facing,kind:kind,ghost:keep&&keep.ghost||null,timer:keep?keep.timer:(kind==="back"?10:kind==="full"||kind==="legs"?3:0),ghostOn:keep?keep.ghostOn:true,tilt:null};
+    PH_CAM={stream:stream,facing:facing,kind:kind,ghost:keep&&keep.ghost||null,timer:keep?keep.timer:(/back/.test(kind)?10:/full|legs|side/.test(kind)?3:0),ghostOn:keep?keep.ghostOn:true,tilt:null};
     openModal('<span class="tag">'+esc(al)+'</span><div class="phcam'+(facing==="user"?' mirror':'')+'"><video id="phv" autoplay playsinline muted></video><img id="phghost" class="phghost" alt=""'+(PH_CAM.ghostOn?'':' hidden')+'>'+phGuideSVG(kind)+'<div class="phcount" id="phcount"></div></div>'+
-      '<div class="phlevel" id="phlevel"><div class="phl-pad"><i class="phl-ok"></i><i id="phbub" class="phl-h"></i><i id="phbubv" class="phl-v"></i></div><span id="phltxt">Hold the phone upright</span></div>'+
+      '<div class="phlevel" id="phlevel"><div class="phl-pad"><i class="phl-ok"></i><i id="phbub" class="phl-h"></i><i id="phbubv" class="phl-v"></i></div><span id="phltxt">Hold the phone upright</span></div><div class="phqual" id="phqual"></div>'+
       '<p class="sub phtip">'+PH_TIPS[kind]+'</p>'+
       '<div class="phcamctl"><button class="btn sm" data-a="phflip">Flip</button><button class="btn sm'+(PH_CAM.ghostOn?' primary':'')+'" data-a="phghostt">Last photo</button><button class="btn sm" data-a="phtimer">Timer '+(PH_CAM.timer?PH_CAM.timer+'s':'off')+'</button></div>'+
       '<div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary grow" data-a="phshot">Capture</button></div>','phm phcamm');
     document.getElementById("phv").srcObject=stream;
+    PH_CAM.qi=setInterval(function(){var vv=document.getElementById("phv"),q=document.getElementById("phqual");if(!PH_CAM||!vv||!q){return;}if(!vv.videoWidth)return;var an=phAnalyze(vv);PH_CAM.q=an;
+      var light=an.mean<.2?["bad","Too dark. Face a window or turn on a light"]:an.mean<.3?["meh","A bit dark. The app will brighten it"]:an.mean>.85?["bad","Too bright. Move out of direct light"]:an.mean>.72?["meh","A bit bright. The app will balance it"]:["good","Light is good"];
+      var sh=an.sharp<12?["bad","Blurry. Hold still or wipe the lens"]:an.sharp<30?["meh","Slightly soft. The app picks the sharpest of 5 shots"]:["good","Sharp"];
+      q.innerHTML='<span class="'+light[0]+'">'+light[1]+'</span><span class="'+sh[0]+'">'+sh[1]+'</span>';},600);
     if(!PH_CAM.ghost)phList(al).then(function(l){if(!l.length||!PH_CAM)return;PH_CAM.ghost=URL.createObjectURL(l[l.length-1].blob);var g=document.getElementById("phghost");if(g)g.src=PH_CAM.ghost;});else document.getElementById("phghost").src=PH_CAM.ghost;
     var gotMotion=false;
     PH_CAM.onMot=function(e){var a=e.accelerationIncludingGravity;if(!PH_CAM||!a||a.y==null)return;gotMotion=true;var x=a.x,y=a.y,z=a.z||0;if(y<0){x=-x;y=-y;z=-z;}
@@ -2471,9 +2495,12 @@ function phStraighten(src,W,H,tilt,front){
 }
 function phShoot(){
   if(!PH_CAM)return;var v=document.getElementById("phv");if(!v||!v.videoWidth)return;
-  var go=function(){var W=v.videoWidth,H=v.videoHeight,c=document.createElement("canvas");c.width=W;c.height=H;var x=c.getContext("2d");if(PH_CAM.facing==="user"){x.translate(W,0);x.scale(-1,1);}x.drawImage(v,0,0);
+  var grab=function(){var W=v.videoWidth,H=v.videoHeight,c=document.createElement("canvas");c.width=W;c.height=H;var x=c.getContext("2d");if(PH_CAM.facing==="user"){x.translate(W,0);x.scale(-1,1);}x.drawImage(v,0,0);return c;};
+  var go=function(){var W=v.videoWidth,H=v.videoHeight,shots=[],best=null,bs=-1,lbl=document.getElementById("phltxt");if(lbl)lbl.textContent="Hold still…";
+    (function burst(k){if(!PH_CAM)return;var c0=grab(),s0=phAnalyze(c0).sharp;if(s0>bs){bs=s0;best=c0;}if(k<4){setTimeout(function(){burst(k+1);},110);return;}finish(best);})(0);};
+  var finish=function(c){var W=c.width,H=c.height;
     var tl=PH_CAM.tilt?{roll:PH_CAM.tilt.roll,pitch:PH_CAM.tilt.pitch}:null,out=phStraighten(c,W,H,tl,PH_CAM.facing==="user");
-    out.toBlob(function(b){phCamStop();closeModal();if(b)phSave(b,today(),tl);},"image/jpeg",.9);flash();play("complete");};
+    out.toBlob(function(b){phCamStop();closeModal();if(b)phSave(b,today(),tl);},"image/jpeg",.92);flash();play("complete");};
   var n=PH_CAM.timer;if(!n){go();return;}
   var el=document.getElementById("phcount");(function tick(){if(!PH_CAM||!document.getElementById("phcount"))return;if(n<=0){el.textContent="";go();return;}el.textContent=n;play("press");n--;setTimeout(tick,1000);})();
 }
