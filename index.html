@@ -1791,12 +1791,12 @@ function tabQuests(){
 
   if(prayers.length){
     var on=prayers.filter(function(q){return e[q.id]&&!e["_m:"+q.id];}).length,jm=prayers.filter(function(q){return e["_j:"+q.id];}).length,any=prayers.filter(function(q){return e[q.id];}).length;
-    h+='<section class="win"><div class="win-h"><span class="tag">Prayers</span><span style="display:flex;gap:12px;align-items:center"><span class="sub">'+any+'/'+prayers.length+' · '+on+' on time'+(jm?' · '+jm+' jemaah':'')+'</span><button class="link" data-a="editprayers">Edit</button></span></div><div class="pray">';
+    h+='<section class="win"><div class="win-h"><span class="tag">Prayers</span><span style="display:flex;gap:12px;align-items:center"><span class="sub">'+any+'/'+prayers.length+' · '+(on-jm)+' on time'+(jm?' · '+jm+' at surau':'')+'</span><button class="link" data-a="editprayers">Edit</button></span></div><div class="pray">';
     prayers.forEach(function(q){
       var st=e[q.id]?(e["_m:"+q.id]?"late":e["_j:"+q.id]?"jem":"on"):"";
-      h+='<button class="pp '+st+'" data-a="pray" data-id="'+q.id+'" aria-label="'+esc(q.name)+': '+(st==="on"?'prayed on time':st==="jem"?'prayed berjemaah at the surau':st==="late"?'prayed late':'not yet')+'">'+esc(q.name)+'<small>'+(st==="on"?'ON TIME':st==="jem"?'JEMAAH':st==="late"?'LATE':'·')+'</small></button>';
+      h+='<button class="pp '+st+'" data-a="pray" data-id="'+q.id+'" aria-label="'+esc(q.name)+': '+(st==="on"?'prayed on time':st==="jem"?'prayed at the surau or masjid':st==="late"?'prayed late':'not yet')+'">'+esc(q.name)+'<small>'+(st==="on"?'ON TIME':st==="jem"?'SURAU':st==="late"?'LATE':'·')+'</small></button>';
     });
-    h+='</div>'+how('Tap once for on time (+'+RANK_XP.E+' EXP), twice for berjemaah at the surau (+'+RANK_XP.E*JEM_MULT+'), three times for late (+'+RANK_XP.E/2+'), four to clear. All five on time: +'+PRAY_BONUS+' bonus. All five berjemaah: another +'+JEM_BONUS+'.')+'</section>';
+    h+='</div>'+how('Tap once for on time (+'+RANK_XP.E+' EXP), twice for the surau or masjid (+'+RANK_XP.E*JEM_MULT+'), three times for late (+'+RANK_XP.E/2+'), four to clear. All five on time: +'+PRAY_BONUS+' bonus. All five at the surau or masjid: another +'+JEM_BONUS+'.')+'</section>';
   }
 
   h+='<section class="win"><div class="win-h"><span class="tag">Daily Quest</span><span class="sub" id="cd">Resets in '+countdown()+'</span></div>';
@@ -3035,7 +3035,7 @@ function handleAction(b){
       afterChange(before,allOn?"All prayers on time":"Prayer recorded",allOn?"+"+PRAY_BONUS+" bonus. Alhamdulillah.":q.name+" on time · +"+RANK_XP[q.rank]+" EXP",others||allOn?"clear":"complete");}
     else if(!e["_m:"+id]&&!e["_j:"+id]){e[id]=RANK_XP[q.rank]*JEM_MULT;e["_j:"+id]=1;
       var pj=S.quests.filter(function(x){return activeOn(x,t)&&isPrayer(x);}),allJ=pj.every(function(x){return e["_j:"+x.id];});
-      afterChange(before,allJ?"All five berjemaah":"Berjemaah",allJ?"+"+JEM_BONUS+" bonus on top. MashaAllah.":q.name+" at the surau · +"+e[id]+" EXP",allJ?"clear":"complete");}
+      afterChange(before,allJ?"All five at the surau":"Surau / masjid",allJ?"+"+JEM_BONUS+" bonus on top. MashaAllah.":q.name+" at the surau or masjid · +"+e[id]+" EXP",allJ?"clear":"complete");}
     else if(e["_j:"+id]){delete e["_j:"+id];e[id]=Math.round(RANK_XP[q.rank]/2);e["_m:"+id]=1;afterChange(before,"Prayer recorded",q.name+" marked late · +"+e[id]+" EXP","soft");}
     else{delete e[id];delete e["_m:"+id];delete e["_j:"+id];afterChange(before,null,null,"undo");}
   }
