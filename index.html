@@ -565,6 +565,16 @@ button.bx{font:inherit;cursor:pointer;padding:0;background:transparent;color:var
 .bx{aspect-ratio:1;min-width:0;overflow:hidden;border:1px solid rgba(var(--g),.4);border-radius:3px;font-family:var(--display);font-size:.62rem;color:var(--muted);display:grid;place-items:center;font-variant-numeric:tabular-nums}
 .bx.w{background:repeating-linear-gradient(135deg,rgba(var(--g),.9) 0 2px,rgba(var(--l),.35) 2px 5px);color:#fff;border-color:var(--glow);text-shadow:0 0 4px #000}
 .bx.l{border-color:rgba(255,77,109,.6);color:#ff8fa3}
+.bx.k{position:relative;cursor:default}.bx.k::after{content:"";position:absolute;right:2px;bottom:2px;width:4px;height:4px;border-radius:1px;background:#e8c35a;box-shadow:0 0 4px #e8c35a}
+.sealbar{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px dashed rgba(232,195,90,.55);border-radius:5px;background:rgba(232,195,90,.06)}
+.sealbar .sub{margin:0;font-size:.8rem}.btn.seal{border-color:#e8c35a;color:#ffe6a0;background:rgba(232,195,90,.12)}
+.bsealed{display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-size:.62rem;letter-spacing:.14em;color:#e8c35a}
+.bsealed::before{content:"";width:6px;height:6px;border-radius:1px;background:#e8c35a;box-shadow:0 0 6px #e8c35a}
+.bhist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.bhist button{width:100%;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;text-align:left;font:inherit;color:var(--text);background:rgba(0,0,0,.22);border:1px solid rgba(var(--g),.3);border-radius:5px;padding:11px 12px;cursor:pointer}
+.bhist button:active{transform:scale(.98)}.bhist .m{font-family:var(--display);letter-spacing:.08em;font-size:.82rem}.bhist .r{font-family:var(--display);font-size:1rem;text-align:right}
+.bhist .meta{grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.74rem;color:var(--muted)}
+.bhist .bar{grid-column:1/-1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}.bhist .bar span{display:block;height:100%;background:var(--glow);box-shadow:0 0 6px var(--glow)}
 .bx.f{opacity:.3}
 .bx.t{outline:1px solid #fff;outline-offset:1px}
 .trend{display:flex;flex-direction:column;gap:10px}
@@ -845,7 +855,7 @@ function seed(keep){
     alloc:{},title:"",quests:notebookQuests(t),gates:notebookGates(t),log:{},bdays:keep.bdays||[],
     look:keep.look||null,rewards:keep.rewards||undefined,evalDay:keep.evalDay||0,
     bench:keep.bench?keep.bench.map(function(b){return {id:b.id,name:b.name,unit:b.unit,stat:b.stat,better:b.better,entries:[]};}):undefined,
-    battle:{label:(keep.battle&&keep.battle.label)||"Battle",days:{},notes:{},past:[]}});
+    battle:{label:(keep.battle&&keep.battle.label)||"Battle",days:{},notes:{},past:[],locked:"",seals:[]}});
 }
 function migrate(o){
   if(!o||!Array.isArray(o.quests)||!o.log)return null;
@@ -892,6 +902,7 @@ function migrate(o){
   if(!o.battle)o.battle={label:"Battle",days:{},notes:{},past:[]};
   if(!o.battle.notes)o.battle.notes={};
   if(!o.battle.past)o.battle.past=[];
+  if(o.battle.locked==null)o.battle.locked="";if(!o.battle.seals)o.battle.seals=[];
   if(!o.events)o.events=[];
   if(!o.bdays)o.bdays=[];
   if(!o.look||!o.look.body)o.look={body:"obsidian",mark:"spark",markColor:"white",build:"average"};
@@ -1814,19 +1825,47 @@ function tabQuests(){
   return h;
 }
 
+function bLocked(d){return !!(S.battle.locked&&d<=S.battle.locked);}
+function sealPending(){var t=today(),n=0,thru="";Object.keys(S.battle.days).forEach(function(d){if(d<=t&&!bLocked(d)){n++;if(d>thru)thru=d;}});return {n:n,thru:thru};}
+function monthSealState(m){var L=S.battle.locked;if(!L)return "";var hasD=Object.keys(S.battle.days).some(function(d){return mkey(d)===m;}),hasP=S.battle.past.some(function(x){return x.m===m;});if(!hasD&&!hasP)return "";var last=m+"-"+pad(daysIn(m));if(last<=L)return "all";var any=Object.keys(S.battle.days).some(function(d){return mkey(d)===m&&d<=L;});return any?"part":"";}
+function monthBest(m){var run=0,best=0,n=daysIn(m),t=today();for(var i=1;i<=n;i++){var d=m+"-"+pad(i);if(d>t)break;if(S.battle.days[d]==="w"){run++;if(run>best)best=run;}else run=0;}return best;}
+function monthReview(m){
+  var t=today(),days=S.battle.days,n=daysIn(m),w=0,l=0,blank=0,p=null,sum=null;S.battle.past.forEach(function(x){if(x.m===m)p=x;});
+  var has=Object.keys(days).some(function(d){return mkey(d)===m;});
+  var fst=Object.keys(days).sort()[0]||"";for(var i=1;i<=n;i++){var d=m+"-"+pad(i);if(d>t)break;if(days[d]==="w")w++;else if(days[d]==="l")l++;else if(d>fst)blank++;}
+  var counted=has?(m===mkey(t)?parseKey(t).getDate():n):n;if(!has&&p){w=p.w;l=n-p.w;blank=0;}
+  var ms=monthSealState(m),h='<span class="tag">'+esc((S.battle.label||"Battle"))+' record</span><h2 style="margin:8px 0 2px">'+esc(monthName(m))+'</h2>';
+  h+='<div class="row" style="margin:0 0 12px;justify-content:flex-start">'+(ms==="all"?'<span class="bsealed">SUBMITTED · LOCKED</span>':ms==="part"?'<span class="bsealed">SUBMITTED THROUGH '+esc(fmtDate(S.battle.locked).toUpperCase())+'</span>':'<span class="sub">Not submitted</span>')+'</div>';
+  h+='<div class="kv" style="margin-bottom:14px;grid-template-columns:repeat(4,minmax(0,1fr))"><div><small>WON</small><b>'+w+'</b></div><div><small>LOST</small><b>'+l+'</b></div><div><small>RATE</small><b>'+(counted?Math.round(w/counted*100):0)+'%</b></div><div><small>BEST RUN</small><b>'+(has?monthBest(m):'–')+'</b></div></div>';
+  if(has){h+='<div class="bgrid">';for(var j=1;j<=n;j++){var dd=m+"-"+pad(j),s=days[dd];h+='<div class="bx'+(s==="w"?' w':s==="l"?' l':'')+(dd>t?' f':'')+(bLocked(dd)&&s?' k':'')+'" title="'+fmtDate(dd)+'">'+(s==="l"?'×':j)+'</div>';}h+='</div>';
+    if(blank&&!(m===mkey(t)))h+='<p class="sub bhint">'+blank+' day'+(blank>1?'s':'')+' left blank.</p>';}
+  else h+='<p class="sub">'+(p?'Entered as a monthly total, so there\'s no day-by-day view.':'Nothing recorded this month.')+'</p>';
+  var tg={},nl=[];Object.keys(S.battle.notes).sort().forEach(function(d){if(mkey(d)!==m)return;var x=S.battle.notes[d];(x.tags||[]).forEach(function(k){tg[k]=(tg[k]||0)+1;});if(x.text)nl.push([d,x.text]);});
+  var tk=Object.keys(tg).sort(function(a,b){return tg[b]-tg[a];});
+  if(tk.length)h+='<p class="sub" style="margin:14px 0 6px">What set off losses</p><div class="trend">'+tk.slice(0,4).map(function(x){return '<div class="tr"><span>'+esc(x)+'</span><span class="b"><span style="width:'+(tg[x]/tg[tk[0]]*100)+'%"></span></span><span class="n">'+tg[x]+'×</span></div>';}).join('')+'</div>';
+  if(nl.length)h+='<ul class="hist" style="margin-top:12px">'+nl.reverse().map(function(x){return '<li><span>'+esc(x[1])+'</span><span class="d">'+fmtDate(x[0])+'</span></li>';}).join('')+'</ul>';
+  var pm=addMonths(m,-1),nm=addMonths(m,1);
+  h+='<div class="row"><button class="btn ghost sm" data-a="bmonth" data-id="'+pm+'">‹ '+esc(monthName(pm,true))+'</button><button class="btn ghost" data-a="close">Close</button>'+(nm<=mkey(t)?'<button class="btn ghost sm" data-a="bmonth" data-id="'+nm+'">'+esc(monthName(nm,true))+' ›</button>':'<span style="width:60px"></span>')+'</div>';
+  openModal(h);
+}
 function tabBattle(){
   var t=today(),B=R.battle,st=S.battle.days[t],m=mkey(t),label=S.battle.label||"Battle",h="";
   h+='<section class="win"><div class="win-h"><span class="tag">'+esc(label)+'</span><button class="link" data-a="renamebattle">Rename</button></div>';
   if(!st)h+='<p class="sub" style="margin:0 0 14px">Did you win today\'s battle?</p><div class="battle-today"><button class="vbtn win" data-a="bwin">VICTORY</button><button class="vbtn lose" data-a="blose">Not today</button></div>';
-  else if(st==="w")h+='<div class="bstatus w"><b>VICTORY</b>+'+VICTORY_XP+' EXP · win streak '+B.streak+'</div><div class="row"><button class="btn ghost sm" data-a="bclear">Undo</button></div>';
-  else h+='<div class="bstatus l"><b>Feedback logged</b>Tomorrow is a new battle.</div><div class="row"><button class="btn ghost sm" data-a="bnote" data-id="'+t+'">Edit note</button><button class="btn ghost sm" data-a="bclear">Undo</button></div>';
+  else if(st==="w")h+='<div class="bstatus w"><b>VICTORY</b>+'+VICTORY_XP+' EXP · win streak '+B.streak+'</div>'+(bLocked(t)?'<div class="row"><span class="bsealed">SUBMITTED</span></div>':'<div class="row"><button class="btn ghost sm" data-a="bclear">Undo</button></div>');
+  else h+='<div class="bstatus l"><b>Feedback logged</b>Tomorrow is a new battle.</div>'+(bLocked(t)?'<div class="row"><span class="bsealed">SUBMITTED</span></div>':'<div class="row"><button class="btn ghost sm" data-a="bnote" data-id="'+t+'">Edit note</button><button class="btn ghost sm" data-a="bclear">Undo</button></div>');
   h+='</section>';
 
   var mm=B.months[m]||{w:0,l:0},elapsed=parseKey(t).getDate();
   h+='<section class="win"><div class="win-h"><span class="tag">'+esc(monthName(m))+'</span></div>';
   h+='<div class="kv" style="margin-bottom:16px;grid-template-columns:repeat(3,minmax(0,1fr))"><div><small>STREAK</small><b>'+B.streak+'</b></div><div><small>BEST</small><b>'+B.best+'</b></div><div><small>THIS MONTH</small><b>'+mm.w+'/'+elapsed+'</b></div></div><div class="bgrid">';
-  for(var i=1;i<=daysIn(m);i++){var d=m+"-"+pad(i),s=S.battle.days[d],tag=d<=t?'button':'div';h+='<'+tag+' class="bx'+(s==="w"?' w':s==="l"?' l':'')+(d>t?' f':'')+(d===t?' t':'')+'"'+(d<=t?' data-a="bcell" data-id="'+d+'"':'')+' title="'+fmtDate(d)+'">'+(s==="l"?'×':i)+'</'+tag+'>';}
-  h+='</div><p class="sub bhint">Tap a past day to fill it in: once for a win, twice for a loss, three times to clear.</p></section>';
+  for(var i=1;i<=daysIn(m);i++){var d=m+"-"+pad(i),s=S.battle.days[d],lk=bLocked(d),tag=d<=t&&!lk?'button':'div';h+='<'+tag+' class="bx'+(s==="w"?' w':s==="l"?' l':'')+(d>t?' f':'')+(d===t?' t':'')+(lk&&s?' k':'')+'"'+(tag==='button'?' data-a="bcell" data-id="'+d+'"':'')+' title="'+fmtDate(d)+'">'+(s==="l"?'×':i)+'</'+tag+'>';}
+  h+='</div>';
+  var sp=sealPending();
+  if(sp.n)h+='<p class="sub bhint">Tap a past day to fill it in: once for a win, twice for a loss, three times to clear.</p><div class="sealbar"><p class="sub">'+sp.n+' day'+(sp.n>1?'s':'')+' not submitted yet</p><button class="btn sm seal" data-a="bseal">Submit results</button></div>';
+  else if(S.battle.locked)h+='<div class="sealbar"><p class="sub">All results submitted through '+fmtDate(S.battle.locked)+'</p></div>';
+  else h+='<p class="sub bhint">Tap a past day to fill it in: once for a win, twice for a loss, three times to clear.</p>';
+  h+='</section>';
 
   var rows={};S.battle.past.forEach(function(p){rows[p.m]={w:p.w,n:p.n};});
   Object.keys(B.months).forEach(function(k){var x=B.months[k];rows[k]={w:x.w,n:k===m?elapsed:daysIn(k)};});
@@ -1834,6 +1873,11 @@ function tabBattle(){
   h+='<section class="win"><div class="win-h"><span class="tag">Trend</span><span class="sub">Win rate by month</span></div>';
   h+=lineChart(ks.map(function(k){return {x:monthName(k,true),y:rows[k].n?Math.round(rows[k].w/rows[k].n*100):0};}),{min:0,max:100,fmt:function(v){return Math.round(v)+"%";},showVals:true,id:"bt",label:"Battle win rate by month"});
   h+='<div class="clear-line"><span class="sub">'+ks.map(function(k){return monthName(k,true)+' '+rows[k].w+'/'+rows[k].n;}).join(' · ')+'</span><button class="btn sm ghost" data-a="addpast">+ Past month</button></div></section>';
+  var hk=Object.keys(rows).sort().reverse(),pastOnly={};S.battle.past.forEach(function(p){pastOnly[p.m]=1;});
+  if(hk.length){h+='<section class="win"><div class="win-h"><span class="tag">Records</span><span class="sub">Tap a month to review</span></div><ul class="bhist">';
+    hk.forEach(function(k){var r=rows[k],pc=r.n?Math.round(r.w/r.n*100):0,ms=monthSealState(k);
+      h+='<li><button data-a="bmonth" data-id="'+k+'"><span class="m">'+esc(monthName(k).toUpperCase())+'</span><span class="r">'+r.w+'<small class="sub">/'+r.n+'</small></span><span class="bar"><span style="width:'+pc+'%"></span></span><span class="meta"><span>'+pc+'% won</span>'+(B.months[k]?'<span>best run '+monthBest(k)+'</span>':'')+(ms==="all"?'<span class="bsealed">SUBMITTED</span>':ms==="part"?'<span class="bsealed" style="opacity:.6">PART SUBMITTED</span>':pastOnly[k]&&!B.months[k]?'<span>from notebook</span>':'')+'</span></button></li>';});
+    h+='</ul></section>';}
 
   var trig=Object.keys(B.trig).sort(function(a,b){return B.trig[b]-B.trig[a];}),notes=Object.keys(S.battle.notes).sort().reverse().slice(0,4),mx=trig.length?B.trig[trig[0]]:1;
   h+='<section class="win"><div class="win-h"><span class="tag">Feedback</span><span class="sub">No failure, only feedback</span></div>';
@@ -2331,7 +2375,7 @@ function tabDungeon(){
 }
 function gateLocked(){
   var pct=Math.min(100,R.lvl/FIGHT_LVL*100);
-  return '<section class="win gatelock"><div class="sealed">'+monsterSVG(BOSSES[0],true,"lk")+'</div><span class="tag">Gate sealed</span><h2>The dungeon opens at level '+FIGHT_LVL+'</h2><p class="sub">Level up through your quests. At level '+FIGHT_LVL+' you can spend keys to fight monsters and bosses. You have '+R.keys+' key'+(R.keys===1?'':'s')+' saved already.</p><div class="bar" style="margin-top:10px"><span style="width:'+pct.toFixed(0)+'%"></span></div><span class="sub">Level '+R.lvl+' / '+FIGHT_LVL+'</span></section>';
+  return '<section class="win gatelock"><div class="bsealed">'+monsterSVG(BOSSES[0],true,"lk")+'</div><span class="tag">Gate sealed</span><h2>The dungeon opens at level '+FIGHT_LVL+'</h2><p class="sub">Level up through your quests. At level '+FIGHT_LVL+' you can spend keys to fight monsters and bosses. You have '+R.keys+' key'+(R.keys===1?'':'s')+' saved already.</p><div class="bar" style="margin-top:10px"><span style="width:'+pct.toFixed(0)+'%"></span></div><span class="sub">Level '+R.lvl+' / '+FIGHT_LVL+'</span></section>';
 }
 function dungeonSection(){
   var f=(S.dungeon.floor||0)+1,F=floorFoe(f),H=hunterBattle(),toBoss=5-((f-1)%5)-1;
@@ -3031,12 +3075,18 @@ function handleAction(b){
     openModal('<span class="tag">Cleared gates</span><ul class="quest-list" style="margin-top:14px">'+gd.map(function(g){return questRow(g,"g");}).join("")+'</ul><div class="row"><button class="btn ghost" data-a="close">Close</button></div>');
   }
   else if(a==="rest"){before=derive();e=S.log[t]=S.log[t]||{};if(e._rest){delete e._rest;afterChange(before,"System","Rest day cancelled.","undo");}else{e._rest=true;afterChange(before,"System","Rest day taken. Recover well, hunter.","shield");}}
-  else if(a==="bwin"){before=derive();S.battle.days[t]="w";delete S.battle.notes[t];flash();afterChange(before,"Victory","+"+VICTORY_XP+" EXP. Another battle won.","victory");}
-  else if(a==="blose"){before=derive();S.battle.days[t]="l";afterChange(before,null,null,"soft");loseForm(t);}
-  else if(a==="bcell"){var bd=id;if(!bd||bd>t)return;before=derive();var cs=S.battle.days[bd];if(!cs)S.battle.days[bd]="w";else if(cs==="w")S.battle.days[bd]="l";else{delete S.battle.days[bd];delete S.battle.notes[bd];}afterChange(before,null,null,!cs?"press":cs==="w"?"soft":"undo");}
-  else if(a==="bclear"){before=derive();delete S.battle.days[t];delete S.battle.notes[t];afterChange(before,null,null,"undo");}
-  else if(a==="bnote")loseForm(id);
+  else if(a==="bwin"){if(bLocked(t))return;before=derive();S.battle.days[t]="w";delete S.battle.notes[t];flash();afterChange(before,"Victory","+"+VICTORY_XP+" EXP. Another battle won.","victory");}
+  else if(a==="blose"){if(bLocked(t))return;before=derive();S.battle.days[t]="l";afterChange(before,null,null,"soft");loseForm(t);}
+  else if(a==="bcell"){var bd=id;if(!bd||bd>t||bLocked(bd))return;before=derive();var cs=S.battle.days[bd];if(!cs)S.battle.days[bd]="w";else if(cs==="w")S.battle.days[bd]="l";else{delete S.battle.days[bd];delete S.battle.notes[bd];}afterChange(before,null,null,!cs?"press":cs==="w"?"soft":"undo");}
+  else if(a==="bclear"){if(bLocked(t))return;before=derive();delete S.battle.days[t];delete S.battle.notes[t];afterChange(before,null,null,"undo");}
+  else if(a==="bnote"){if(bLocked(id))return;loseForm(id);}
+  else if(a==="bmonth"){play("open");monthReview(id);}
+  else if(a==="bseal"){var sp=sealPending();if(!sp.n)return;play("open");var gaps=0;var first=Object.keys(S.battle.days).sort()[0];for(var gd=S.battle.locked?addDays(S.battle.locked,1):first;gd&&gd<=sp.thru;gd=addDays(gd,1))if(!S.battle.days[gd])gaps++;
+    openModal('<span class="tag">Submit results</span><h2>Lock in '+sp.n+' day'+(sp.n>1?'s':'')+'?</h2><p>Everything through <b>'+fmtDate(sp.thru)+'</b> becomes final. You won\'t be able to change those days or their notes.</p>'+(gaps?'<p class="sub">'+gaps+' blank day'+(gaps>1?'s':'')+' in that range will stay blank for good.</p>':'')+'<div class="row"><button class="btn ghost" data-a="close">Not yet</button><button class="btn seal" data-a="bseal2">Submit</button></div>');}
+  else if(a==="bseal2"){var sp2=sealPending();if(!sp2.n){closeModal();return;}var sw=0,sl=0;Object.keys(S.battle.days).forEach(function(d){if(d<=sp2.thru&&!bLocked(d)){if(S.battle.days[d]==="w")sw++;else sl++;}});
+    S.battle.locked=sp2.thru>S.battle.locked?sp2.thru:S.battle.locked;S.battle.seals.push({at:Date.now(),thru:sp2.thru,w:sw,l:sl});save();closeModal();render();play("level");toast("Results submitted",sw+" won, "+sl+" lost. Locked through "+fmtDate(sp2.thru)+".");}
   else if(a==="savenote"){
+    if(bLocked(id)){closeModal();return;}
     var tags=[].slice.call(modal.querySelectorAll('[data-tg][aria-pressed="true"]')).map(function(x){return x.getAttribute("data-tg");}),tx=document.getElementById("n-text").value.trim();
     if(tags.length||tx)S.battle.notes[id]={tags:tags,text:tx};else delete S.battle.notes[id];
     save();closeModal();render();play("notify");toast("Feedback saved","Patterns show up in Feedback.");
@@ -3044,7 +3094,7 @@ function handleAction(b){
   else if(a==="renamebattle"){play("open");openModal('<span class="tag">Rename</span><div class="field"><label for="bl">Name for this tracker</label><input id="bl" maxlength="16" value="'+esc(S.battle.label||"Battle")+'"></div><div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary" data-a="savebl">Save</button></div>');}
   else if(a==="savebl"){var v=document.getElementById("bl").value.trim();if(v){S.battle.label=v;save();render();}closeModal();}
   else if(a==="addpast"){play("open");openModal('<span class="tag">Past month</span><p>Copy a month from your notebook.</p><div class="grid2"><div class="field"><label for="pm">Month</label><input id="pm" type="month" max="'+mkey(t)+'" required></div><div class="field"><label for="pw">Wins</label><input id="pw" type="number" min="0" max="31" required></div></div><div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary" data-a="savepast">Save</button></div>');}
-  else if(a==="savepast"){var pm=document.getElementById("pm").value,pw=parseInt(document.getElementById("pw").value,10);if(!pm||isNaN(pw))return;S.battle.past=S.battle.past.filter(function(p){return p.m!==pm;});S.battle.past.push({m:pm,w:Math.min(pw,daysIn(pm)),n:daysIn(pm)});save();closeModal();render();play("notify");}
+  else if(a==="savepast"){var pm=document.getElementById("pm").value,pw=parseInt(document.getElementById("pw").value,10);if(!pm||isNaN(pw))return;if(monthSealState(pm)){toast("Locked","That month's results are already submitted.");return;}S.battle.past=S.battle.past.filter(function(p){return p.m!==pm;});S.battle.past.push({m:pm,w:Math.min(pw,daysIn(pm)),n:daysIn(pm)});save();closeModal();render();play("notify");}
   else if(a==="alloc"){if(!R||R.points<1)return;var s=b.getAttribute("data-s");S.alloc[s]=(S.alloc[s]||0)+1;save();render();play("complete");toast("System",STAT_NAMES[s]+" +1");}
   else if(a==="addprayers"){var bp=derive();S.quests=prayerQuests(today()).concat(S.quests);afterChange(bp,"System","Prayers panel added.","notify");}
   else if(a==="tutgo"){showTutorial(+id);play("tab");}
