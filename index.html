@@ -310,6 +310,8 @@ button.bx{font:inherit;font-family:var(--display);font-size:.62rem;cursor:pointe
 .pp.on small{color:#04101e}
 .pp.late{border-color:var(--gold);color:var(--gold);background:rgba(255,204,85,.1)}
 .pp.late small{color:#ffe3a3}
+.pp.jem{background:linear-gradient(160deg,#ffe08a,#e8b33a 55%,#c98a12);color:#1a1000;border-color:#ffe6a0;box-shadow:0 0 16px rgba(255,204,85,.7),inset 0 0 8px rgba(255,255,255,.5)}
+.pp.jem small{color:#3a2600;font-weight:700}
 
 /* Character */
 .char{display:flex;flex-direction:column;gap:16px}
@@ -675,7 +677,7 @@ var GATE_XP={E:25,D:60,C:150,B:350,A:800,S:2000};
 var GOLD_MULT={E:2,D:2.5,C:3,B:3.5,A:4,S:5};
 function goldFor(rank,xp){return Math.round(xp*(GOLD_MULT[rank]||1));}
 var RANK_DESC={E:"Trivial · under 5 min",D:"Easy · 5–15 min",C:"Moderate · 15–30 min",B:"Hard · 30–60 min or a full workout",A:"Very hard · 1–2 hours or intense training",S:"Extreme · 2+ hours, or a double session at max effort"};
-var CLEAR_BONUS=25,PRAY_BONUS=15,VICTORY_XP=25,PENALTY_XP=15,TEST_XP=30,BOOST=1.5,HEARTS=3;
+var CLEAR_BONUS=25,PRAY_BONUS=15,JEM_MULT=3,JEM_BONUS=30,VICTORY_XP=25,PENALTY_XP=15,TEST_XP=30,BOOST=1.5,HEARTS=3;
 var LS_KEY="hunter-system-v1";
 function need(l){return 100*(2*l-1);}
 function hunterRank(l){return l>=65?"SSS":l>=50?"SS":l>=38?"S":l>=26?"A":l>=17?"B":l>=10?"C":l>=5?"D":"E";}
@@ -952,13 +954,14 @@ function derive(){
       if(k.charAt(0)==="_")return;
       var xv=Math.round((+e[k]||0)*mult);dayXP+=xv;dayQ+=xv;total++;
       var q=lookup[k],p=k.slice(0,2);goldEarned+=q&&q.rank?goldFor(q.rank,xv):xv;
-      if(q&&comps[q.stat]!=null)comps[q.stat]+=p==="g:"?3:p==="b:"?2:1;
+      if(q&&comps[q.stat]!=null)comps[q.stat]+=p==="g:"?3:p==="b:"?2:e["_j:"+k]?2:1;
       if(p==="g:"){gatesDone++;hadGate=true;}else if(p==="b:")tests++;else if(p!=="r:")quests++;
     });
     if(S.battle.days[d]==="w"){dayXP+=Math.round(VICTORY_XP*mult);comps.WIL+=1;}
     var done=req.filter(function(q){return e[q.id];}).length,cleared=req.length>0&&done===req.length;
     if(cleared){dayXP+=Math.round(CLEAR_BONUS*mult);if(hadGate)perfectGateDay=true;}
     var pr=req.filter(isPrayer),prOn=pr.length>0&&pr.every(function(q){return e[q.id]&&!e["_m:"+q.id];});
+    if(prOn&&pr.every(function(q){return e["_j:"+q.id];}))dayXP+=Math.round(JEM_BONUS*mult);
     if(prOn){dayXP+=Math.round(PRAY_BONUS*mult);prayRun++;prayBest=Math.max(prayBest,prayRun);}else if(d<t)prayRun=0;
     earned+=dayXP;goldEarned+=(dayXP-dayQ)*2;
     var state;
@@ -1787,13 +1790,13 @@ function tabQuests(){
   }
 
   if(prayers.length){
-    var on=prayers.filter(function(q){return e[q.id]&&!e["_m:"+q.id];}).length,any=prayers.filter(function(q){return e[q.id];}).length;
-    h+='<section class="win"><div class="win-h"><span class="tag">Prayers</span><span style="display:flex;gap:12px;align-items:center"><span class="sub">'+any+'/'+prayers.length+' · '+on+' on time</span><button class="link" data-a="editprayers">Edit</button></span></div><div class="pray">';
+    var on=prayers.filter(function(q){return e[q.id]&&!e["_m:"+q.id];}).length,jm=prayers.filter(function(q){return e["_j:"+q.id];}).length,any=prayers.filter(function(q){return e[q.id];}).length;
+    h+='<section class="win"><div class="win-h"><span class="tag">Prayers</span><span style="display:flex;gap:12px;align-items:center"><span class="sub">'+any+'/'+prayers.length+' · '+on+' on time'+(jm?' · '+jm+' jemaah':'')+'</span><button class="link" data-a="editprayers">Edit</button></span></div><div class="pray">';
     prayers.forEach(function(q){
-      var st=e[q.id]?(e["_m:"+q.id]?"late":"on"):"";
-      h+='<button class="pp '+st+'" data-a="pray" data-id="'+q.id+'" aria-label="'+esc(q.name)+': '+(st==="on"?'prayed on time':st==="late"?'prayed late':'not yet')+'">'+esc(q.name)+'<small>'+(st==="on"?'ON TIME':st==="late"?'LATE':'·')+'</small></button>';
+      var st=e[q.id]?(e["_m:"+q.id]?"late":e["_j:"+q.id]?"jem":"on"):"";
+      h+='<button class="pp '+st+'" data-a="pray" data-id="'+q.id+'" aria-label="'+esc(q.name)+': '+(st==="on"?'prayed on time':st==="jem"?'prayed berjemaah at the surau':st==="late"?'prayed late':'not yet')+'">'+esc(q.name)+'<small>'+(st==="on"?'ON TIME':st==="jem"?'JEMAAH':st==="late"?'LATE':'·')+'</small></button>';
     });
-    h+='</div>'+how('Tap once for on time (+'+RANK_XP.E+' EXP), again for late (+'+RANK_XP.E/2+'), again to clear. All five on time gives a +'+PRAY_BONUS+' bonus.')+'</section>';
+    h+='</div>'+how('Tap once for on time (+'+RANK_XP.E+' EXP), twice for berjemaah at the surau (+'+RANK_XP.E*JEM_MULT+'), three times for late (+'+RANK_XP.E/2+'), four to clear. All five on time: +'+PRAY_BONUS+' bonus. All five berjemaah: another +'+JEM_BONUS+'.')+'</section>';
   }
 
   h+='<section class="win"><div class="win-h"><span class="tag">Daily Quest</span><span class="sub" id="cd">Resets in '+countdown()+'</span></div>';
@@ -3022,7 +3025,7 @@ function handleAction(b){
   if(a==="tab"){if(b.getAttribute("data-slot"))view.slot=b.getAttribute("data-slot");if(view.tab!==id){view.tab=id;play("tab");render();window.scrollTo(0,0);try{history.replaceState(null,"","#"+id);}catch(x){}}}
   else if(a==="dq"){view.dq=id;play("tab");render();}
   else if(a==="slot"){view.slot=id;play("tab");render();}
-  else if(a==="toggle"){e=S.log[t]=S.log[t]||{};if(e[id]){before=derive();delete e[id];delete e["_m:"+id];afterChange(before,"System","Quest moved back to To do.","undo");}else completeQuest(b,id,false);}
+  else if(a==="toggle"){e=S.log[t]=S.log[t]||{};if(e[id]){before=derive();delete e[id];delete e["_m:"+id];delete e["_j:"+id];afterChange(before,"System","Quest moved back to To do.","undo");}else completeQuest(b,id,false);}
   else if(a==="mini")completeQuest(b,id,true);
   else if(a==="pray"){
     var q=find(S.quests,id);if(!q)return;e=S.log[t]=S.log[t]||{};before=derive();
@@ -3030,8 +3033,11 @@ function handleAction(b){
     if(!e[id]){e[id]=RANK_XP[q.rank];if(others)delete e._rest;
       var pr=S.quests.filter(function(x){return activeOn(x,t)&&isPrayer(x);}),allOn=pr.every(function(x){return e[x.id]&&!e["_m:"+x.id];});
       afterChange(before,allOn?"All prayers on time":"Prayer recorded",allOn?"+"+PRAY_BONUS+" bonus. Alhamdulillah.":q.name+" on time · +"+RANK_XP[q.rank]+" EXP",others||allOn?"clear":"complete");}
-    else if(!e["_m:"+id]){e[id]=Math.round(RANK_XP[q.rank]/2);e["_m:"+id]=1;afterChange(before,"Prayer recorded",q.name+" marked late · +"+e[id]+" EXP","soft");}
-    else{delete e[id];delete e["_m:"+id];afterChange(before,null,null,"undo");}
+    else if(!e["_m:"+id]&&!e["_j:"+id]){e[id]=RANK_XP[q.rank]*JEM_MULT;e["_j:"+id]=1;
+      var pj=S.quests.filter(function(x){return activeOn(x,t)&&isPrayer(x);}),allJ=pj.every(function(x){return e["_j:"+x.id];});
+      afterChange(before,allJ?"All five berjemaah":"Berjemaah",allJ?"+"+JEM_BONUS+" bonus on top. MashaAllah.":q.name+" at the surau · +"+e[id]+" EXP",allJ?"clear":"complete");}
+    else if(e["_j:"+id]){delete e["_j:"+id];e[id]=Math.round(RANK_XP[q.rank]/2);e["_m:"+id]=1;afterChange(before,"Prayer recorded",q.name+" marked late · +"+e[id]+" EXP","soft");}
+    else{delete e[id];delete e["_m:"+id];delete e["_j:"+id];afterChange(before,null,null,"undo");}
   }
   else if(a==="editprayers"){
     play("open");var ps=S.quests.filter(function(x){return activeOn(x,t)&&isPrayer(x);});
