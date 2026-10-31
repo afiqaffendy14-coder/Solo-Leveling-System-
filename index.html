@@ -221,6 +221,16 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
 .rklist b{font-size:.88rem}.rklist small{display:block;font-size:.72rem;color:var(--muted)}.rkto{font-family:var(--display);display:flex;gap:4px;align-items:center;grid-row:span 2}.rkto i{font-style:normal;font-weight:700}.rklist .sub{font-size:.7rem}
 button.bx{font:inherit;cursor:pointer;padding:0;background:transparent;color:var(--muted)}button.bx:active{transform:scale(.92)}.bhint{margin:10px 0 0;font-size:.76rem}
+.phtabs,.phrange,.phspeed{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.phtabs button,.phrange button,.phspeed button{background:transparent;border:1px solid rgba(var(--g),.3);border-radius:14px;padding:5px 12px;color:var(--muted);font-family:var(--display);font-size:.76rem;letter-spacing:.06em}
+.phtabs button.on,.phrange button.on,.phspeed button.on{background:var(--glow);color:#04060c;border-color:var(--glow)}
+.phtoday{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}.phbtns{display:flex;gap:8px}.phbtns .btn.primary{flex:1}
+.phstrip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.phth{position:relative;padding:0;border:1px solid rgba(var(--g),.25);border-radius:6px;overflow:hidden;background:#000;aspect-ratio:3/4}
+.phth img{width:100%;height:100%;object-fit:cover;display:block}.phth small{position:absolute;left:0;right:0;bottom:0;font-size:.58rem;padding:2px 4px;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff;text-align:left}
+.phmake .btn{flex:1}
+.modal.phm{max-width:520px}.phcanvas{display:grid;place-items:center;margin:10px 0;background:#000;border-radius:8px;overflow:hidden}.phcanvas canvas,.phcanvas img{max-width:100%;max-height:62vh;height:auto;display:block}
+.phalist{display:flex;flex-direction:column;gap:6px;margin:10px 0}.phal{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid rgba(var(--g),.2);border-radius:6px}
 .setsrow{display:grid;grid-template-columns:70px auto 1fr;gap:8px;align-items:center}.setsrow input{min-width:0}.setsrow span{color:var(--muted);font-size:.85rem}
 .qsets{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;padding:10px 4px 2px;border-top:1px solid rgba(var(--g),.12)}
 .qs-l{font-family:var(--display);font-size:.78rem;letter-spacing:.06em;color:var(--glow)}.qs-l small{color:var(--muted);font-family:inherit;letter-spacing:0}
@@ -1146,7 +1156,7 @@ function toast(head,text){
 }
 function flash(red){var f=document.createElement("div");f.className="flash"+(red?" redf":"");document.body.appendChild(f);setTimeout(function(){f.remove();},950);}
 function openModal(html,cls){modal.className="win modal "+(cls||"");modal.innerHTML=html;ov.classList.add("open");var f=modal.querySelector("input:not([type=checkbox]):not([type=file]),select")||modal.querySelector("button.primary,button");if(f)f.focus();}
-function closeModal(){if(typeof battleTimer!=="undefined"&&battleTimer){clearTimeout(battleTimer);battleTimer=null;}ov.classList.remove("open");modal.innerHTML="";if(photoCtl){photoCtl.abort();photoCtl=null;}}
+function closeModal(){if(view.phStop){view.phStop();view.phStop=null;}if(typeof battleTimer!=="undefined"&&battleTimer){clearTimeout(battleTimer);battleTimer=null;}ov.classList.remove("open");modal.innerHTML="";if(photoCtl){photoCtl.abort();photoCtl=null;}}
 ov.addEventListener("click",function(e){if(e.target===ov)closeModal();});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ov.classList.contains("open"))closeModal();});
 var CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="#04060c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -1685,7 +1695,9 @@ function render(){
     var badge=x[0]==="quests"&&left?'<span class="badge">'+left+'</span>':x[0]==="hunter"&&(R.points||testsDue().show)?'<span class="badge" style="background:#c9921a">'+(R.points||"!")+'</span>':x[0]==="dungeon"&&fightOpen()&&R.keys>0?'<span class="badge" style="background:var(--line)">'+(R.keys>9?"9+":R.keys)+'</span>':x[0]==="battle"&&!S.battle.days[t]?'<span class="badge" style="background:var(--line)">!</span>':'';
     return '<button data-a="tab" data-id="'+x[0]+'"'+(view.tab===x[0]?' aria-current="page"':'')+'>'+ICONS[x[0]]+esc(x[1].length>8?x[1].slice(0,8):x[1])+badge+'</button>';
   }).join("");
+  if(view.tab==="hunter")setTimeout(photoFill,0);
 }
+function setFootPh(){}
 function setFoot(){var el=document.getElementById("sync");if(el)el.textContent=syncLabel;}
 
 function setsHTML(q,skip,done){
@@ -1830,6 +1842,7 @@ function tabHunter(){
   STATS.forEach(function(s){h+='<div class="stat" title="'+STAT_NAMES[s]+': '+STAT_HINT[s]+'"><small>'+s+'</small><b>'+R.stats[s]+'</b>'+(R.points?'<button data-a="alloc" data-s="'+s+'" aria-label="Add a point to '+STAT_NAMES[s]+'">+</button>':'')+'</div>';});
   h+='</div>'+how('Every 4 quests of a stat raise it by 1. A gate counts 3, a real-world test 2, a battle victory 1 WIL. Each level up gives 1 point to spend anywhere.')+'</section>';
 
+  h+=photoSection();
   h+='<section class="win"><div class="win-h"><span class="tag">Real-World Tests</span><button class="link" data-a="addb">+ Add test</button></div><div class="shop">';
   if(!S.bench.length)h+='<p class="empty">No tests yet.</p>';
   S.bench.forEach(function(b){
@@ -2350,6 +2363,97 @@ function evolveShadow(id){
     '<p>Power per soldier <b style="color:var(--text)">'+shPower(a,tier).toLocaleString()+' → '+shPower(a,nx).toLocaleString()+'</b>. All '+c+' '+esc(a.name)+(c>1?'s':'')+' evolved.</p><div class="row" style="justify-content:center"><button class="btn primary" data-a="close">Accept</button></div></div>','evom');
   flash();
 }
+/* ---------- Progress photos: stored on this device in IndexedDB ---------- */
+var PH_DB=null;
+function phDB(){if(PH_DB)return PH_DB;PH_DB=new Promise(function(res,rej){if(!window.indexedDB){rej("noidb");return;}var r=indexedDB.open("hunter-photos",1);r.onupgradeneeded=function(){var db=r.result;if(!db.objectStoreNames.contains("photos")){var st=db.createObjectStore("photos",{keyPath:"id"});st.createIndex("album","album");}};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});return PH_DB;}
+function phTx(mode,fn){return phDB().then(function(db){return new Promise(function(res,rej){var tx=db.transaction("photos",mode),st=tx.objectStore("photos"),out=fn(st);tx.oncomplete=function(){res(out&&out.result!==undefined?out.result:out);};tx.onerror=function(){rej(tx.error);};});});}
+function phPut(rec){return phTx("readwrite",function(st){return st.put(rec);});}
+function phDel(id){return phTx("readwrite",function(st){return st.delete(id);});}
+function phGet(id){return phTx("readonly",function(st){return st.get(id);});}
+function phList(album){return phTx("readonly",function(st){return st.index("album").getAll(album);}).then(function(a){return (a||[]).sort(function(x,y){return x.date<y.date?-1:1;});});}
+function phAlbums(){if(!S.photoAlbums||!S.photoAlbums.length)S.photoAlbums=["Body","Face"];return S.photoAlbums;}
+function phAlbum(){var a=phAlbums();if(a.indexOf(view.phAlbum)<0)view.phAlbum=a[0];return view.phAlbum;}
+var PH_RANGES=[["week","Week",7],["month","Month",30],["year","Year",365],["all","All",0]];
+function phRange(list){var r=view.phRange||"month",n=0;PH_RANGES.forEach(function(x){if(x[0]===r)n=x[2];});if(!n)return list;var from=addDays(today(),-(n-1));return list.filter(function(p){return p.date>=from;});}
+function phShrink(file,max){return new Promise(function(res,rej){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){var w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){b?res({blob:b,w:c.width,h:c.height}):rej("encode");},"image/jpeg",.84);};img.onerror=function(){URL.revokeObjectURL(url);rej("decode");};img.src=url;});}
+function phSave(file,date){var al=phAlbum();return phShrink(file,1280).then(function(o){return phPut({id:al+"|"+date,album:al,date:date,blob:o.blob,w:o.w,h:o.h,t:Date.now()});}).then(function(){S.photoCount=(S.photoCount||0)+1;save();render();toast("Progress photo",al+" · "+fmtDate(date)+" saved.");play("complete");},function(){toast("Progress photo","That photo couldn't be read. Try another one.");play("error");});}
+function photoSection(){
+  var al=phAlbum(),rg=view.phRange||"month";
+  var h='<section class="win" id="photosec"><div class="win-h"><span class="tag">Progress Photos</span><button class="link" data-a="phalbums">Albums</button></div>';
+  h+='<div class="phtabs">'+phAlbums().map(function(a){return '<button class="'+(a===al?'on':'')+'" data-a="phalb" data-id="'+esc(a)+'">'+esc(a)+'</button>';}).join("")+'</div>';
+  h+='<div class="phtoday" id="phtoday"><span class="sub">Loading…</span></div>';
+  h+='<div class="phstrip" id="phstrip"></div>';
+  h+='<div class="phrange">'+PH_RANGES.map(function(x){return '<button class="'+(x[0]===rg?'on':'')+'" data-a="phrng" data-id="'+x[0]+'">'+x[1]+'</button>';}).join("")+'</div>';
+  h+='<div class="row phmake"><button class="btn" data-a="phlapse">Time-lapse</button><button class="btn" data-a="phba">Before &amp; after</button></div>';
+  h+='<input type="file" accept="image/*" capture="user" id="phcam" hidden><input type="file" accept="image/*" id="phgal" hidden>';
+  h+=how('Take one photo a day for each album, in the same spot, pose and light. Then pick Week, Month, Year or All and make a time-lapse or a before and after. Photos are saved only on this phone and are not part of the backup, so save the videos and images you want to keep.')+'</section>';
+  return h;
+}
+function photoFill(){
+  var box=document.getElementById("phstrip"),td=document.getElementById("phtoday");if(!box)return;var al=phAlbum();
+  phList(al).then(function(list){
+    if(!document.getElementById("phstrip"))return;
+    var t=today(),has=list.some(function(p){return p.date===t;});
+    td.innerHTML='<div class="phbtns"><button class="btn primary" data-a="phcam">'+(has?'Retake today\'s photo':'Take today\'s photo')+'</button><button class="btn" data-a="phgal">Upload</button></div><span class="sub">'+(has?'✓ Today\'s '+esc(al)+' photo is in. ':'')+list.length+' photo'+(list.length===1?'':'s')+' in '+esc(al)+'</span>';
+    (view.phUrls||[]).forEach(function(u){URL.revokeObjectURL(u);});view.phUrls=[];
+    var show=list.slice(-14).reverse();
+    if(!show.length){box.innerHTML='<p class="empty">No photos yet. Take your first one today.</p>';return;}
+    box.innerHTML=show.map(function(p){var u=URL.createObjectURL(p.blob);view.phUrls.push(u);return '<button class="phth" data-a="phview" data-id="'+esc(p.id)+'"><img src="'+u+'" alt="'+esc(p.album)+' '+p.date+'"><small>'+p.date.slice(8)+"/"+p.date.slice(5,7)+'</small></button>';}).join("");
+  },function(){td.innerHTML='<span class="sub">Photos aren\'t available in this browser.</span>';});
+}
+function phFrameDraw(ctx,W,H,bmp,label,sub){ctx.fillStyle="#05060a";ctx.fillRect(0,0,W,H);var k=Math.min(W/bmp.width,H/bmp.height),w=bmp.width*k,h=bmp.height*k;ctx.drawImage(bmp,(W-w)/2,(H-h)/2,w,h);
+  var g=ctx.createLinearGradient(0,H-90,0,H);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.75)");ctx.fillStyle=g;ctx.fillRect(0,H-90,W,90);
+  ctx.fillStyle="#fff";ctx.font="700 "+Math.round(W*.05)+"px Chakra Petch, sans-serif";ctx.fillText(label,W*.05,H-W*.075);ctx.font="500 "+Math.round(W*.032)+"px Barlow, sans-serif";ctx.fillStyle="rgba(255,255,255,.75)";ctx.fillText(sub,W*.05,H-W*.035);}
+function phLoad(p,maxW){return (window.createImageBitmap?createImageBitmap(p.blob):Promise.reject()).catch(function(){return new Promise(function(res){var u=URL.createObjectURL(p.blob),im=new Image();im.onload=function(){res(im);};im.src=u;});});}
+function phSaveBlob(blob,name){
+  var file;try{file=new File([blob],name,{type:blob.type});}catch(e){}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:name}).catch(function(){});return;}
+  var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove();},1500);
+}
+function phLapse(){
+  var al=phAlbum();phList(al).then(function(all){var list=phRange(all);
+    if(list.length<2){toast("Time-lapse","You need at least 2 "+al+" photos in this range.");play("error");return;}
+    var W=720,H=Math.round(720*(list[0].h/list[0].w));H=Math.max(720,Math.min(1280,H));
+    openModal('<span class="tag">Time-lapse</span><h2>'+esc(al)+' · '+list.length+' days</h2><div class="phcanvas"><canvas id="phc" width="'+W+'" height="'+H+'"></canvas></div><div class="phspeed">'+[["Slow",3],["Normal",6],["Fast",12]].map(function(x){return '<button class="'+(x[1]===(view.phFps||6)?'on':'')+'" data-a="phfps" data-id="'+x[1]+'">'+x[0]+'</button>';}).join("")+'</div><div class="row"><button class="btn ghost" data-a="close">Close</button><button class="btn primary" data-a="phrec">Save video</button></div>','phm');
+    var cv=document.getElementById("phc"),ctx=cv.getContext("2d"),i=0,stop=false,first=list[0].date;
+    view.phPlay={list:list,W:W,H:H,al:al};
+    function frame(){if(stop||!document.getElementById("phc"))return;var p=list[i%list.length];phLoad(p).then(function(b){if(!document.getElementById("phc"))return;phFrameDraw(ctx,W,H,b,"DAY "+(diffDays(first,p.date)+1),al+" · "+fmtDate(p.date));if(b.close)b.close();i++;setTimeout(frame,i%list.length===0?1200:1000/(view.phFps||6));});}
+    frame();view.phStop=function(){stop=true;};
+  });
+}
+function phRecord(){
+  var P=view.phPlay;if(!P)return;var cv=document.createElement("canvas");cv.width=P.W;cv.height=P.H;var ctx=cv.getContext("2d");
+  if(!cv.captureStream||!window.MediaRecorder){toast("Time-lapse","This phone can't save video from the app. Screen-record the time-lapse instead.");return;}
+  var types=["video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9","video/webm"],mt="";for(var k=0;k<types.length;k++)if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(types[k])){mt=types[k];break;}
+  var stream=cv.captureStream(30),rec=new MediaRecorder(stream,mt?{mimeType:mt,videoBitsPerSecond:4000000}:undefined),chunks=[];
+  rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
+  rec.onstop=function(){var type=(rec.mimeType||mt||"video/webm").split(";")[0],blob=new Blob(chunks,{type:type});phSaveBlob(blob,"hunter-"+P.al.toLowerCase()+"-timelapse-"+today()+(type.indexOf("mp4")>=0?".mp4":".webm"));var b=document.querySelector('[data-a="phrec"]');if(b){b.disabled=false;b.textContent="Save video";}toast("Time-lapse","Video ready.");play("level");};
+  var btn=document.querySelector('[data-a="phrec"]');if(btn){btn.disabled=true;btn.textContent="Recording…";}
+  var i=0,first=P.list[0].date,fps=view.phFps||6;rec.start();
+  (function next(){if(i>=P.list.length){setTimeout(function(){rec.stop();},900);return;}var p=P.list[i];phLoad(p).then(function(b){phFrameDraw(ctx,P.W,P.H,b,"DAY "+(diffDays(first,p.date)+1),P.al+" · "+fmtDate(p.date));if(b.close)b.close();i++;setTimeout(next,1000/fps);});})();
+}
+function phBA(){
+  var al=phAlbum();phList(al).then(function(all){var list=phRange(all);
+    if(list.length<2){toast("Before & after","You need at least 2 "+al+" photos in this range.");play("error");return;}
+    var a=list[0],z=list[list.length-1];
+    Promise.all([phLoad(a),phLoad(z)]).then(function(bs){
+      var H=1080,w1=Math.round(bs[0].width*H/bs[0].height),w2=Math.round(bs[1].width*H/bs[1].height),cv=document.createElement("canvas");cv.width=w1+w2+12;cv.height=H+120;var ctx=cv.getContext("2d");
+      ctx.fillStyle="#05060a";ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(bs[0],0,0,w1,H);ctx.drawImage(bs[1],w1+12,0,w2,H);
+      var gl=getComputedStyle(document.documentElement).getPropertyValue("--glow").trim()||"#58c4ff";
+      ctx.font="700 44px Chakra Petch, sans-serif";ctx.fillStyle="#fff";ctx.fillText("BEFORE",24,H+60);ctx.fillText("AFTER",w1+36,H+60);
+      ctx.font="500 28px Barlow, sans-serif";ctx.fillStyle="rgba(255,255,255,.7)";ctx.fillText(fmtDate(a.date),24,H+100);ctx.fillText(fmtDate(z.date)+" · "+(diffDays(a.date,z.date))+" days later",w1+36,H+100);
+      ctx.fillStyle=gl;ctx.fillRect(w1,0,12,H);
+      cv.toBlob(function(blob){view.phBA=blob;var u=URL.createObjectURL(blob);
+        openModal('<span class="tag">Before &amp; after</span><h2>'+esc(al)+' · '+diffDays(a.date,z.date)+' days</h2><div class="phcanvas"><img src="'+u+'" alt="Before and after"></div><div class="row"><button class="btn ghost" data-a="close">Close</button><button class="btn primary" data-a="phbasave">Save image</button></div>','phm');
+      },"image/jpeg",.9);
+      bs.forEach(function(b){if(b.close)b.close();});
+    });
+  });
+}
+function phAlbumsForm(){
+  openModal('<span class="tag">Albums</span><p class="sub">One album per angle, like Body front, Body side or Face.</p><div class="phalist">'+phAlbums().map(function(a,i){return '<div class="phal"><span>'+esc(a)+'</span>'+(phAlbums().length>1?'<button class="btn sm ghost" data-a="phdelalb" data-id="'+i+'">Remove</button>':'')+'</div>';}).join("")+'</div><div class="field"><input id="phnew" maxlength="20" placeholder="New album name"></div><div class="row"><button class="btn ghost" data-a="close">Done</button><button class="btn primary" data-a="phaddalb">Add album</button></div>');
+}
+
 /* ---------- Effects ---------- */
 function afterChange(before,head,msg,sound){
   save();var after=derive();render();
@@ -2747,6 +2851,11 @@ function equip(g){
 }
 
 /* ---------- Events ---------- */
+app.addEventListener("change",function(ev){var el=ev.target;if(el.id!=="phcam"&&el.id!=="phgal")return;var f=el.files&&el.files[0];if(!f)return;
+  if(el.id==="phcam"){phSave(f,today());return;}
+  var lm=f.lastModified?new Date(f.lastModified):new Date(),ds=lm.getFullYear()+"-"+pad(lm.getMonth()+1)+"-"+pad(lm.getDate());if(ds>today())ds=today();view.phPending=f;
+  openModal('<span class="tag">Upload</span><h2>Which day is this from?</h2><div class="field"><input type="date" id="phd" value="'+ds+'" max="'+today()+'"></div><p class="sub">If a photo already exists for that day, this one replaces it.</p><div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary" data-a="phdate">Save photo</button></div>');
+});
 app.addEventListener("click",handle);modal.addEventListener("click",handle);nav.addEventListener("click",handle);
 function reduced(){return matchMedia("(prefers-reduced-motion: reduce)").matches;}
 function completeQuest(b,id,asMini){
@@ -2830,6 +2939,21 @@ function handleAction(b){
   else if(a==="remadd"){S.reminders=S.reminders||[];S.reminders.push({id:uid(),time:"18:00",label:"Time for your quests",days:[]});save();remindersForm();}
   else if(a==="remdel"){S.reminders=(S.reminders||[]).filter(function(r){return r.id!==id;});save();remindersForm();}
   else if(a==="remics"){var ics=remICS(S.reminders||[]),blob=new Blob([ics],{type:"text/calendar"}),u=URL.createObjectURL(blob),ln=document.createElement("a");ln.href=u;ln.download="hunter-reminders.ics";document.body.appendChild(ln);ln.click();setTimeout(function(){URL.revokeObjectURL(u);ln.remove();},800);toast("Reminders","Open the downloaded file to add them to your calendar.");play("notify");}
+  else if(a==="phalb"){view.phAlbum=id;render();play("tab");}
+  else if(a==="phrng"){view.phRange=id;render();play("tab");}
+  else if(a==="phcam"){var fc=document.getElementById("phcam");if(fc){fc.value="";fc.click();}}
+  else if(a==="phgal"){var fg=document.getElementById("phgal");if(fg){fg.value="";fg.click();}}
+  else if(a==="phview"){phGet(id).then(function(p){if(!p)return;var u=URL.createObjectURL(p.blob);openModal('<span class="tag">'+esc(p.album)+'</span><h2>'+fmtDate(p.date)+'</h2><div class="phcanvas"><img src="'+u+'" alt="Progress photo"></div><div class="row"><button class="btn danger" data-a="phdel" data-id="'+esc(p.id)+'">Delete</button><button class="btn ghost" data-a="close">Close</button></div>','phm');});}
+  else if(a==="phdel"){phDel(id).then(function(){closeModal();render();toast("Progress photo","Deleted.");play("undo");});}
+  else if(a==="phlapse"){phLapse();}
+  else if(a==="phfps"){view.phFps=+id;document.querySelectorAll('[data-a="phfps"]').forEach(function(x){x.classList.toggle("on",x===b);});play("press");}
+  else if(a==="phrec"){phRecord();}
+  else if(a==="phba"){phBA();}
+  else if(a==="phbasave"){if(view.phBA)phSaveBlob(view.phBA,"hunter-"+phAlbum().toLowerCase()+"-before-after-"+today()+".jpg");}
+  else if(a==="phalbums"){phAlbumsForm();}
+  else if(a==="phaddalb"){var nm=(document.getElementById("phnew").value||"").trim().slice(0,20);if(!nm||phAlbums().indexOf(nm)>=0)return;S.photoAlbums.push(nm);save();phAlbumsForm();render();}
+  else if(a==="phdelalb"){var ai=+id;if(phAlbums().length>1){S.photoAlbums.splice(ai,1);save();phAlbumsForm();render();}}
+  else if(a==="phdate"){var fd=view.phPending,dv=(document.getElementById("phd")||{}).value;if(fd&&dv){closeModal();phSave(fd,dv>today()?today():dv);view.phPending=null;}}
   else if(a==="rankall")rankAllQuests();
   else if(a==="manopen"){if(view.manualPrompt)openClaude(view.manualPrompt);toast("Ask Claude","Question copied. Paste it in Claude if needed.");}
   else if(a==="manpaste"){readClip(function(t){var ta=document.getElementById("manreply");if(t&&ta){ta.value=t;var bt=document.querySelector('[data-a="manparse"]');if(bt)handleAction(bt);}});}
