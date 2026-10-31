@@ -221,6 +221,11 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
 .rklist b{font-size:.88rem}.rklist small{display:block;font-size:.72rem;color:var(--muted)}.rkto{font-family:var(--display);display:flex;gap:4px;align-items:center;grid-row:span 2}.rkto i{font-style:normal;font-weight:700}.rklist .sub{font-size:.7rem}
 button.bx{font:inherit;cursor:pointer;padding:0;background:transparent;color:var(--muted)}button.bx:active{transform:scale(.92)}.bhint{margin:10px 0 0;font-size:.76rem}
+.phlevel{margin:-2px 0 8px;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+.phl-bar{position:relative;width:60%;height:10px;border-radius:6px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.5)}.phl-bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#fff;opacity:.7}
+.phl-bar i{position:absolute;top:50%;left:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#ffcc55;box-shadow:0 0 8px #ffcc55;transition:left .12s}
+.phlevel span{font-size:.78rem;color:var(--text);background:rgba(0,0,0,.4);padding:2px 8px;border-radius:10px;text-align:center}
+.phlevel.ok .phl-bar i{background:#6fdc8c;box-shadow:0 0 10px #6fdc8c}.phlevel.ok span{color:#6fdc8c}
 .modal.phcamm{max-width:440px;padding-bottom:10px}
 .phcam{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:8px;overflow:hidden;margin:8px 0}
 .phcam video{width:100%;height:100%;object-fit:cover;display:block}.phcam.mirror video,.phcam.mirror .phghost{transform:scaleX(-1)}
@@ -2386,7 +2391,7 @@ function phAlbum(){var a=phAlbums();if(a.indexOf(view.phAlbum)<0)view.phAlbum=a[
 var PH_RANGES=[["week","Week",7],["month","Month",30],["year","Year",365],["all","All",0]];
 function phRange(list){var r=view.phRange||"month",n=0;PH_RANGES.forEach(function(x){if(x[0]===r)n=x[2];});if(!n)return list;var from=addDays(today(),-(n-1));return list.filter(function(p){return p.date>=from;});}
 function phShrink(file,max){return new Promise(function(res,rej){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){var w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){b?res({blob:b,w:c.width,h:c.height}):rej("encode");},"image/jpeg",.84);};img.onerror=function(){URL.revokeObjectURL(url);rej("decode");};img.src=url;});}
-function phSave(file,date){var al=phAlbum();return phShrink(file,1280).then(function(o){return phPut({id:al+"|"+date,album:al,date:date,blob:o.blob,w:o.w,h:o.h,t:Date.now()});}).then(function(){S.photoCount=(S.photoCount||0)+1;save();render();toast("Progress photo",al+" · "+fmtDate(date)+" saved.");play("complete");},function(){toast("Progress photo","That photo couldn't be read. Try another one.");play("error");});}
+function phSave(file,date,tilt){var al=phAlbum();return phShrink(file,1280).then(function(o){var rec={id:al+"|"+date,album:al,date:date,blob:o.blob,w:o.w,h:o.h,t:Date.now()};if(tilt)rec.tilt=tilt;return phPut(rec);}).then(function(){S.photoCount=(S.photoCount||0)+1;save();render();toast("Progress photo",al+" · "+fmtDate(date)+" saved.");play("complete");},function(){toast("Progress photo","That photo couldn't be read. Try another one.");play("error");});}
 function photoSection(){
   var al=phAlbum(),rg=view.phRange||"month";
   var h='<section class="win" id="photosec"><div class="win-h"><span class="tag">Progress Photos</span><button class="link" data-a="phalbums">Albums</button></div>';
@@ -2406,26 +2411,32 @@ function phGuideSVG(kind){
   return '<svg class="phguide" viewBox="0 0 300 400" preserveAspectRatio="none"><path d="M150,30 a24,28 0 1,0 0.1,0Z M118,88 C100,92 92,100 88,118 L80,210 L92,212 L104,130 L108,214 L104,300 L112,372 L136,372 L146,262 L154,262 L164,372 L188,372 L196,300 L192,214 L196,130 L208,212 L220,210 L212,118 C208,100 200,92 182,88 Z" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="8 6"/><line x1="150" y1="10" x2="150" y2="392" stroke="#fff" stroke-width="1" opacity=".5"/><line x1="60" y1="30" x2="240" y2="30" stroke="#58c4ff" stroke-width="2"/><text x="244" y="34" fill="#58c4ff" font-size="12">head</text><line x1="60" y1="372" x2="240" y2="372" stroke="#58c4ff" stroke-width="2"/><text x="244" y="376" fill="#58c4ff" font-size="12">feet</text></svg>';
 }
 var PH_CAM=null;
-function phCamStop(){if(PH_CAM&&PH_CAM.stream){PH_CAM.stream.getTracks().forEach(function(t){t.stop();});}if(PH_CAM&&PH_CAM.ghost)URL.revokeObjectURL(PH_CAM.ghost);PH_CAM=null;}
+function phCamStop(){if(PH_CAM&&PH_CAM.onTilt)window.removeEventListener('deviceorientation',PH_CAM.onTilt);if(PH_CAM&&PH_CAM.stream){PH_CAM.stream.getTracks().forEach(function(t){t.stop();});}if(PH_CAM&&PH_CAM.ghost)URL.revokeObjectURL(PH_CAM.ghost);PH_CAM=null;}
 function phCamera(facing){
   var al=phAlbum(),kind=/face|muka|skin/i.test(al)?"face":"body";
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){var fc=document.getElementById("phcam");if(fc){fc.value="";fc.click();}return;}
   facing=facing||(PH_CAM&&PH_CAM.facing)||(kind==="face"?"user":"environment");
+  try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==="function")DeviceOrientationEvent.requestPermission().catch(function(){});}catch(e){}
   var prevGhost=PH_CAM&&PH_CAM.ghost;if(PH_CAM&&PH_CAM.stream)PH_CAM.stream.getTracks().forEach(function(t){t.stop();});
   navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:1706}},audio:false}).then(function(stream){
     PH_CAM={stream:stream,facing:facing,kind:kind,ghost:prevGhost||null,timer:(PH_CAM&&PH_CAM.timer)||0,ghostOn:PH_CAM?PH_CAM.ghostOn:true};
-    openModal('<span class="tag">'+esc(al)+' photo</span><div class="phcam'+(facing==="user"?' mirror':'')+'"><video id="phv" autoplay playsinline muted></video><img id="phghost" class="phghost" alt=""'+(PH_CAM.ghostOn?'':' hidden')+'>'+phGuideSVG(kind)+'<div class="phcount" id="phcount"></div></div>'+
+    openModal('<span class="tag">'+esc(al)+' photo</span><div class="phcam'+(facing==="user"?' mirror':'')+'"><video id="phv" autoplay playsinline muted></video><img id="phghost" class="phghost" alt=""'+(PH_CAM.ghostOn?'':' hidden')+'>'+phGuideSVG(kind)+'<div class="phcount" id="phcount"></div></div><div class="phlevel" id="phlevel"><div class="phl-bar"><i id="phbub"></i></div><span id="phltxt">Hold the phone upright</span></div>'+
       '<p class="sub phtip">'+(kind==="face"?'Line your eyes up with the blue line and your chin with the bottom mark. Look straight ahead.':'Prop the phone up at chest height. Head on the top line, feet on the bottom line, centre line through your body. Use the timer.')+'</p>'+
       '<div class="phcamctl"><button class="btn sm" data-a="phflip">Flip</button><button class="btn sm'+(PH_CAM.ghostOn?' primary':'')+'" data-a="phghostt" id="phgbtn">Last photo</button><button class="btn sm" data-a="phtimer" id="phtbtn">Timer '+(PH_CAM.timer?PH_CAM.timer+'s':'off')+'</button></div>'+
       '<div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary grow" data-a="phshot">Capture</button></div>','phm phcamm');
     var v=document.getElementById("phv");v.srcObject=stream;
+    PH_CAM.target={b:90,g:0};phList(al).then(function(l){var last=l.filter(function(p){return p.tilt;}).pop();if(last&&PH_CAM)PH_CAM.target=last.tilt;});
+    PH_CAM.onTilt=function(e){if(!PH_CAM||e.beta==null)return;var b=Math.round(e.beta),g=Math.round(e.gamma);PH_CAM.tilt={b:b,g:g};var T=PH_CAM.target,db=b-T.b,dg=g-T.g,ok=Math.abs(db)<=2&&Math.abs(dg)<=2;
+      var lv=document.getElementById("phlevel"),bub=document.getElementById("phbub"),tx=document.getElementById("phltxt");if(!lv)return;lv.classList.toggle("ok",ok);bub.style.left=(50-Math.max(-45,Math.min(45,dg*3)))+"%";
+      tx.textContent=ok?"Angle matches your last photo":(Math.abs(db)>2?(db>0?"Tilt the top away from you ":"Tilt the top toward you ")+Math.abs(db)+"°":"")+(Math.abs(db)>2&&Math.abs(dg)>2?" · ":"")+(Math.abs(dg)>2?(dg>0?"Raise the right side ":"Raise the left side ")+Math.abs(dg)+"°":"");};
+    window.addEventListener("deviceorientation",PH_CAM.onTilt);
     if(!PH_CAM.ghost)phList(al).then(function(l){if(!l.length||!PH_CAM)return;PH_CAM.ghost=URL.createObjectURL(l[l.length-1].blob);var g=document.getElementById("phghost");if(g)g.src=PH_CAM.ghost;});else document.getElementById("phghost").src=PH_CAM.ghost;
   },function(){phCamStop();toast("Camera","Camera not allowed here, opening your phone camera instead.");var fc=document.getElementById("phcam");if(fc){fc.value="";fc.click();}});
 }
 function phShoot(){
   if(!PH_CAM)return;var v=document.getElementById("phv");if(!v||!v.videoWidth)return;
   var go=function(){var c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;var x=c.getContext("2d");if(PH_CAM.facing==="user"){x.translate(c.width,0);x.scale(-1,1);}x.drawImage(v,0,0);
-    c.toBlob(function(b){phCamStop();closeModal();if(b)phSave(b,today());},"image/jpeg",.9);flash();play("complete");};
+    var tl=PH_CAM.tilt?{b:PH_CAM.tilt.b,g:PH_CAM.tilt.g}:null;c.toBlob(function(b){phCamStop();closeModal();if(b)phSave(b,today(),tl);},"image/jpeg",.9);flash();play("complete");};
   var n=PH_CAM.timer;if(!n){go();return;}
   var el=document.getElementById("phcount");(function tick(){if(!PH_CAM||!document.getElementById("phcount"))return;if(n<=0){el.textContent="";go();return;}el.textContent=n;play("press");n--;setTimeout(tick,1000);})();
 }
