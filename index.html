@@ -226,6 +226,13 @@ button.bx{font:inherit;cursor:pointer;padding:0;background:transparent;color:var
 .phl-bar i{position:absolute;top:50%;left:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#ffcc55;box-shadow:0 0 8px #ffcc55;transition:left .12s}
 .phlevel span{font-size:.78rem;color:var(--text);background:rgba(0,0,0,.4);padding:2px 8px;border-radius:10px;text-align:center}
 .phlevel.ok .phl-bar i{background:#6fdc8c;box-shadow:0 0 10px #6fdc8c}.phlevel.ok span{color:#6fdc8c}
+.phl-pad{position:relative;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.4)}
+.phl-pad .phl-ok{position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:1.5px dashed rgba(111,220,140,.8)}
+.phl-pad .phl-h,.phl-pad .phl-v{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#ffcc55;box-shadow:0 0 8px #ffcc55;transition:all .12s}
+.phl-pad .phl-h{top:50%;left:50%}.phl-pad .phl-v{left:50%;top:50%;background:#ff9a4d;box-shadow:0 0 8px #ff9a4d}
+.phlevel.ok .phl-h,.phlevel.ok .phl-v{background:#6fdc8c;box-shadow:0 0 10px #6fdc8c}
+.phlevel{flex-direction:row!important;justify-content:center;gap:12px!important}
+.phal span small{display:block;font-size:.66rem;color:var(--muted)}
 .modal.phcamm{max-width:440px;padding-bottom:10px}
 .phcam{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:8px;overflow:hidden;margin:8px 0}
 .phcam video{width:100%;height:100%;object-fit:cover;display:block}.phcam.mirror video,.phcam.mirror .phghost{transform:scaleX(-1)}
@@ -2385,8 +2392,13 @@ function phTx(mode,fn){return phDB().then(function(db){return new Promise(functi
 function phPut(rec){return phTx("readwrite",function(st){return st.put(rec);});}
 function phDel(id){return phTx("readwrite",function(st){return st.delete(id);});}
 function phGet(id){return phTx("readonly",function(st){return st.get(id);});}
-function phList(album){return phTx("readonly",function(st){return st.index("album").getAll(album);}).then(function(a){return (a||[]).sort(function(x,y){return x.date<y.date?-1:1;});});}
-function phAlbums(){if(!S.photoAlbums||!S.photoAlbums.length)S.photoAlbums=["Body","Face"];return S.photoAlbums;}
+function phList(album){return phTx("readonly",function(st){var ix=st.index("album"),r1=ix.getAll(album),r2=album==="Full body"?ix.getAll("Body"):null;return {get result(){return (r1.result||[]).concat(r2&&r2.result||[]);}};}).then(function(a){return (a||[]).sort(function(x,y){return x.date<y.date?-1:1;});});}
+var PH_KINDS=[["upper","Close-up"],["flex","Close-up flexed"],["full","Full body"],["legs","Legs"],["back","Back"],["face","Face"]];
+function phAlbums(){if(!S.photoAlbums||!S.photoAlbums.length)S.photoAlbums=["Upper body","Upper body flexed","Full body","Legs","Back","Face"];
+  if(!S.phV2){S.phV2=1;var i=S.photoAlbums.indexOf("Body");if(i>=0)S.photoAlbums.splice(i,1,"Full body");["Upper body","Upper body flexed"].reverse().forEach(function(n){if(S.photoAlbums.indexOf(n)<0)S.photoAlbums.unshift(n);});}
+  if(!S.phV3){S.phV3=1;var fi=S.photoAlbums.indexOf("Full body");["Legs","Back"].forEach(function(n,k){if(S.photoAlbums.indexOf(n)<0)S.photoAlbums.splice(fi>=0?fi+1+k:S.photoAlbums.length,0,n);});}
+  return S.photoAlbums;}
+function phKind(al){var k=(S.photoKinds||{})[al];if(k)return k;return /face|muka|skin/i.test(al)?"face":/leg|thigh|calf|calves|quad/i.test(al)?"legs":/back|lat/i.test(al)?"back":/flex/i.test(al)?"flex":/full/i.test(al)?"full":/upper|close|torso|chest|arm|ab/i.test(al)?"upper":"full";}
 function phAlbum(){var a=phAlbums();if(a.indexOf(view.phAlbum)<0)view.phAlbum=a[0];return view.phAlbum;}
 var PH_RANGES=[["week","Week",7],["month","Month",30],["year","Year",365],["all","All",0]];
 function phRange(list){var r=view.phRange||"month",n=0;PH_RANGES.forEach(function(x){if(x[0]===r)n=x[2];});if(!n)return list;var from=addDays(today(),-(n-1));return list.filter(function(p){return p.date>=from;});}
@@ -2407,36 +2419,61 @@ function photoSection(){
 }
 
 function phGuideSVG(kind){
-  if(kind==="face")return '<svg class="phguide" viewBox="0 0 300 400" preserveAspectRatio="none"><ellipse cx="150" cy="185" rx="88" ry="118" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="8 6"/><line x1="150" y1="40" x2="150" y2="360" stroke="#fff" stroke-width="1" opacity=".5"/><line x1="70" y1="160" x2="230" y2="160" stroke="#58c4ff" stroke-width="2"/><text x="236" y="164" fill="#58c4ff" font-size="12">eyes</text><line x1="100" y1="300" x2="200" y2="300" stroke="#fff" stroke-width="1.5" opacity=".7"/><text x="204" y="304" fill="#fff" font-size="12" opacity=".8">chin</text></svg>';
-  return '<svg class="phguide" viewBox="0 0 300 400" preserveAspectRatio="none"><path d="M150,30 a24,28 0 1,0 0.1,0Z M118,88 C100,92 92,100 88,118 L80,210 L92,212 L104,130 L108,214 L104,300 L112,372 L136,372 L146,262 L154,262 L164,372 L188,372 L196,300 L192,214 L196,130 L208,212 L220,210 L212,118 C208,100 200,92 182,88 Z" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="8 6"/><line x1="150" y1="10" x2="150" y2="392" stroke="#fff" stroke-width="1" opacity=".5"/><line x1="60" y1="30" x2="240" y2="30" stroke="#58c4ff" stroke-width="2"/><text x="244" y="34" fill="#58c4ff" font-size="12">head</text><line x1="60" y1="372" x2="240" y2="372" stroke="#58c4ff" stroke-width="2"/><text x="244" y="376" fill="#58c4ff" font-size="12">feet</text></svg>';
+  var L=function(y,t){return '<line x1="55" y1="'+y+'" x2="245" y2="'+y+'" stroke="#58c4ff" stroke-width="2"/><text x="249" y="'+(y+4)+'" fill="#58c4ff" font-size="12">'+t+'</text>';},C='<line x1="150" y1="8" x2="150" y2="392" stroke="#fff" stroke-width="1" opacity=".45"/>',D=' fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="8 6"';
+  var svg=function(x){return '<svg class="phguide" viewBox="0 0 300 400" preserveAspectRatio="none">'+C+x+'</svg>';};
+  if(kind==="face")return svg('<ellipse cx="150" cy="185" rx="88" ry="118"'+D+'/>'+L(160,"eyes")+L(300,"chin"));
+  if(kind==="upper")return svg('<path d="M150,22 a38,46 0 1,0 0.1,0Z M128,108 L128,124 C96,128 70,136 58,152 C50,190 52,260 56,392 M172,108 L172,124 C204,128 230,136 242,152 C250,190 248,260 244,392 M92,160 C96,240 100,320 104,392 M208,160 C204,240 200,320 196,392"'+D+'/>'+L(114,"chin")+L(150,"shoulders")+L(360,"waist"));
+  if(kind==="flex")return svg('<path d="M150,62 a34,40 0 1,0 0.1,0Z M130,140 L130,152 C112,156 96,160 86,166 L40,170 C26,150 22,118 30,92 C38,78 52,80 56,96 C58,110 60,128 66,140 M170,140 L170,152 C188,156 204,160 214,166 L260,170 C274,150 278,118 270,92 C262,78 248,80 244,96 C242,110 240,128 234,140 M96,176 C100,250 104,320 108,392 M204,176 C200,250 196,320 192,392"'+D+'/>'+L(142,"chin")+L(170,"elbows")+L(360,"waist"));
+  if(kind==="legs")return svg('<path d="M92,20 C90,60 92,90 96,120 C100,180 104,240 108,300 L112,380 L140,380 L146,280 L150,150 L154,280 L160,380 L188,380 L192,300 C196,240 200,180 204,120 C208,90 210,60 208,20 Z"'+D+'/>'+L(24,"waist")+L(210,"knees")+L(380,"feet"));
+  if(kind==="back")return svg('<path d="M150,22 a38,46 0 1,0 0.1,0Z M128,108 L128,124 C96,128 70,136 58,152 C50,190 52,260 56,392 M172,108 L172,124 C204,128 230,136 242,152 C250,190 248,260 244,392 M92,160 C96,240 100,320 104,392 M208,160 C204,240 200,320 196,392 M150,124 L150,360"'+D+'/>'+L(114,"neck")+L(150,"shoulders")+L(360,"waist"));
+  return svg('<path d="M150,30 a24,28 0 1,0 0.1,0Z M118,88 C100,92 92,100 88,118 L80,210 L92,212 L104,130 L108,214 L104,300 L112,372 L136,372 L146,262 L154,262 L164,372 L188,372 L196,300 L192,214 L196,130 L208,212 L220,210 L212,118 C208,100 200,92 182,88 Z"'+D+'/>'+L(30,"head")+L(372,"feet"));
 }
-var PH_CAM=null;
-function phCamStop(){if(PH_CAM&&PH_CAM.onTilt)window.removeEventListener('deviceorientation',PH_CAM.onTilt);if(PH_CAM&&PH_CAM.stream){PH_CAM.stream.getTracks().forEach(function(t){t.stop();});}if(PH_CAM&&PH_CAM.ghost)URL.revokeObjectURL(PH_CAM.ghost);PH_CAM=null;}
+var PH_TIPS={face:"Eyes on the blue line, chin on the bottom mark. Look straight ahead.",upper:"Phone at chest height, the same distance every time. Chin and waist on the lines, arms relaxed.",flex:"Same spot and distance as the relaxed shot. Double biceps with elbows on the elbow line.",legs:"Prop the phone at knee height. Waist on the top line, knees and feet on their lines. Use the timer.",back:"Prop the phone at chest height and turn around. Neck, shoulders and waist on the lines. Use the 10 second timer.",full:"Prop the phone at chest height. Head and feet on the lines, centre line through your body. Use the timer."};
+var PH_OK={roll:15,pitch:12},PH_CAM=null;
+function phCamStop(){if(PH_CAM){if(PH_CAM.onMot)window.removeEventListener("devicemotion",PH_CAM.onMot);if(PH_CAM.onOri)window.removeEventListener("deviceorientation",PH_CAM.onOri);if(PH_CAM.stream)PH_CAM.stream.getTracks().forEach(function(t){t.stop();});if(PH_CAM.ghost)URL.revokeObjectURL(PH_CAM.ghost);}PH_CAM=null;}
+function phTiltUI(){
+  if(!PH_CAM||!PH_CAM.tilt)return;var r=PH_CAM.tilt.roll,p=PH_CAM.tilt.pitch,okR=Math.abs(r)<=PH_OK.roll,okP=Math.abs(p)<=PH_OK.pitch,ok=okR&&okP,perfect=Math.abs(r)<=2&&Math.abs(p)<=2;
+  var lv=document.getElementById("phlevel"),bub=document.getElementById("phbub"),bv=document.getElementById("phbubv"),tx=document.getElementById("phltxt");if(!lv)return;
+  lv.classList.toggle("ok",ok);lv.classList.toggle("perfect",perfect);
+  bub.style.left=(50-Math.max(-45,Math.min(45,r*2.4)))+"%";bv.style.top=(50+Math.max(-45,Math.min(45,p*3)))+"%";
+  tx.textContent=perfect?"Perfectly straight":ok?"Good. The app straightens the rest":(!okP?(p>0?"Tilt the top toward you":"Tilt the top away from you"):"")+(!okP&&!okR?" · ":"")+(!okR?(r>0?"Raise the right side":"Raise the left side"):"");
+}
 function phCamera(facing){
-  var al=phAlbum(),kind=/face|muka|skin/i.test(al)?"face":"body";
+  var al=phAlbum(),kind=phKind(al);
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){var fc=document.getElementById("phcam");if(fc){fc.value="";fc.click();}return;}
-  facing=facing||(PH_CAM&&PH_CAM.facing)||(kind==="face"?"user":"environment");
-  try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==="function")DeviceOrientationEvent.requestPermission().catch(function(){});}catch(e){}
-  var prevGhost=PH_CAM&&PH_CAM.ghost;if(PH_CAM&&PH_CAM.stream)PH_CAM.stream.getTracks().forEach(function(t){t.stop();});
+  facing=facing||(PH_CAM&&PH_CAM.facing)||(kind==="full"||kind==="legs"||kind==="back"?"environment":"user");
+  try{if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission==="function")DeviceMotionEvent.requestPermission().catch(function(){});if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==="function")DeviceOrientationEvent.requestPermission().catch(function(){});}catch(e){}
+  var keep=PH_CAM?{ghost:PH_CAM.ghost,timer:PH_CAM.timer,ghostOn:PH_CAM.ghostOn}:null;if(PH_CAM){if(PH_CAM.onMot)window.removeEventListener("devicemotion",PH_CAM.onMot);if(PH_CAM.onOri)window.removeEventListener("deviceorientation",PH_CAM.onOri);if(PH_CAM.stream)PH_CAM.stream.getTracks().forEach(function(t){t.stop();});}
   navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:1706}},audio:false}).then(function(stream){
-    PH_CAM={stream:stream,facing:facing,kind:kind,ghost:prevGhost||null,timer:(PH_CAM&&PH_CAM.timer)||0,ghostOn:PH_CAM?PH_CAM.ghostOn:true};
-    openModal('<span class="tag">'+esc(al)+' photo</span><div class="phcam'+(facing==="user"?' mirror':'')+'"><video id="phv" autoplay playsinline muted></video><img id="phghost" class="phghost" alt=""'+(PH_CAM.ghostOn?'':' hidden')+'>'+phGuideSVG(kind)+'<div class="phcount" id="phcount"></div></div><div class="phlevel" id="phlevel"><div class="phl-bar"><i id="phbub"></i></div><span id="phltxt">Hold the phone upright</span></div>'+
-      '<p class="sub phtip">'+(kind==="face"?'Line your eyes up with the blue line and your chin with the bottom mark. Look straight ahead.':'Prop the phone up at chest height. Head on the top line, feet on the bottom line, centre line through your body. Use the timer.')+'</p>'+
-      '<div class="phcamctl"><button class="btn sm" data-a="phflip">Flip</button><button class="btn sm'+(PH_CAM.ghostOn?' primary':'')+'" data-a="phghostt" id="phgbtn">Last photo</button><button class="btn sm" data-a="phtimer" id="phtbtn">Timer '+(PH_CAM.timer?PH_CAM.timer+'s':'off')+'</button></div>'+
+    PH_CAM={stream:stream,facing:facing,kind:kind,ghost:keep&&keep.ghost||null,timer:keep?keep.timer:(kind==="back"?10:kind==="full"||kind==="legs"?3:0),ghostOn:keep?keep.ghostOn:true,tilt:null};
+    openModal('<span class="tag">'+esc(al)+'</span><div class="phcam'+(facing==="user"?' mirror':'')+'"><video id="phv" autoplay playsinline muted></video><img id="phghost" class="phghost" alt=""'+(PH_CAM.ghostOn?'':' hidden')+'>'+phGuideSVG(kind)+'<div class="phcount" id="phcount"></div></div>'+
+      '<div class="phlevel" id="phlevel"><div class="phl-pad"><i class="phl-ok"></i><i id="phbub" class="phl-h"></i><i id="phbubv" class="phl-v"></i></div><span id="phltxt">Hold the phone upright</span></div>'+
+      '<p class="sub phtip">'+PH_TIPS[kind]+'</p>'+
+      '<div class="phcamctl"><button class="btn sm" data-a="phflip">Flip</button><button class="btn sm'+(PH_CAM.ghostOn?' primary':'')+'" data-a="phghostt">Last photo</button><button class="btn sm" data-a="phtimer">Timer '+(PH_CAM.timer?PH_CAM.timer+'s':'off')+'</button></div>'+
       '<div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary grow" data-a="phshot">Capture</button></div>','phm phcamm');
-    var v=document.getElementById("phv");v.srcObject=stream;
-    PH_CAM.target={b:90,g:0};phList(al).then(function(l){var last=l.filter(function(p){return p.tilt;}).pop();if(last&&PH_CAM)PH_CAM.target=last.tilt;});
-    PH_CAM.onTilt=function(e){if(!PH_CAM||e.beta==null)return;var b=Math.round(e.beta),g=Math.round(e.gamma);PH_CAM.tilt={b:b,g:g};var T=PH_CAM.target,db=b-T.b,dg=g-T.g,ok=Math.abs(db)<=2&&Math.abs(dg)<=2;
-      var lv=document.getElementById("phlevel"),bub=document.getElementById("phbub"),tx=document.getElementById("phltxt");if(!lv)return;lv.classList.toggle("ok",ok);bub.style.left=(50-Math.max(-45,Math.min(45,dg*3)))+"%";
-      tx.textContent=ok?"Angle matches your last photo":(Math.abs(db)>2?(db>0?"Tilt the top away from you ":"Tilt the top toward you ")+Math.abs(db)+"°":"")+(Math.abs(db)>2&&Math.abs(dg)>2?" · ":"")+(Math.abs(dg)>2?(dg>0?"Raise the right side ":"Raise the left side ")+Math.abs(dg)+"°":"");};
-    window.addEventListener("deviceorientation",PH_CAM.onTilt);
+    document.getElementById("phv").srcObject=stream;
     if(!PH_CAM.ghost)phList(al).then(function(l){if(!l.length||!PH_CAM)return;PH_CAM.ghost=URL.createObjectURL(l[l.length-1].blob);var g=document.getElementById("phghost");if(g)g.src=PH_CAM.ghost;});else document.getElementById("phghost").src=PH_CAM.ghost;
+    var gotMotion=false;
+    PH_CAM.onMot=function(e){var a=e.accelerationIncludingGravity;if(!PH_CAM||!a||a.y==null)return;gotMotion=true;var x=a.x,y=a.y,z=a.z||0;if(y<0){x=-x;y=-y;z=-z;}
+      PH_CAM.tilt={roll:Math.round(Math.atan2(-x,y)*180/Math.PI),pitch:Math.round(Math.atan2(z,y)*180/Math.PI)};phTiltUI();};
+    PH_CAM.onOri=function(e){if(!PH_CAM||gotMotion||e.beta==null)return;PH_CAM.tilt={roll:Math.round(e.gamma),pitch:Math.round(90-e.beta)};phTiltUI();};
+    window.addEventListener("devicemotion",PH_CAM.onMot);window.addEventListener("deviceorientation",PH_CAM.onOri);
   },function(){phCamStop();toast("Camera","Camera not allowed here, opening your phone camera instead.");var fc=document.getElementById("phcam");if(fc){fc.value="";fc.click();}});
+}
+function phStraighten(src,W,H,tilt,front){
+  /* 1) keystone: undo converging lines from tilting forward or back */
+  var p=Math.max(-PH_OK.pitch,Math.min(PH_OK.pitch,tilt?tilt.pitch:0))*Math.PI/180,c=Math.tan(p)*(front?1:-1)*1.04,rs=function(y){return 1+c*(0.5-y/H);},mn=Math.min(rs(0),rs(H));
+  var A=document.createElement("canvas");A.width=W;A.height=H;var a=A.getContext("2d");a.fillStyle="#000";a.fillRect(0,0,W,H);
+  var step=4;for(var y=0;y<H;y+=step){var sx=rs(y+step/2)/mn,w=W*sx;a.drawImage(src,0,y,W,step,(W-w)/2,y,w,step);}
+  /* 2) roll: rotate level and zoom slightly so no corners show */
+  var r=Math.max(-PH_OK.roll,Math.min(PH_OK.roll,tilt?tilt.roll:0))*Math.PI/180,ar=Math.abs(r),s=Math.cos(ar)+(Math.max(W,H)/Math.min(W,H))*Math.sin(ar);
+  var B=document.createElement("canvas");B.width=W;B.height=H;var b=B.getContext("2d");b.translate(W/2,H/2);b.rotate(r);b.scale(s,s);b.drawImage(A,-W/2,-H/2);return B;
 }
 function phShoot(){
   if(!PH_CAM)return;var v=document.getElementById("phv");if(!v||!v.videoWidth)return;
-  var go=function(){var c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;var x=c.getContext("2d");if(PH_CAM.facing==="user"){x.translate(c.width,0);x.scale(-1,1);}x.drawImage(v,0,0);
-    var tl=PH_CAM.tilt?{b:PH_CAM.tilt.b,g:PH_CAM.tilt.g}:null;c.toBlob(function(b){phCamStop();closeModal();if(b)phSave(b,today(),tl);},"image/jpeg",.9);flash();play("complete");};
+  var go=function(){var W=v.videoWidth,H=v.videoHeight,c=document.createElement("canvas");c.width=W;c.height=H;var x=c.getContext("2d");if(PH_CAM.facing==="user"){x.translate(W,0);x.scale(-1,1);}x.drawImage(v,0,0);
+    var tl=PH_CAM.tilt?{roll:PH_CAM.tilt.roll,pitch:PH_CAM.tilt.pitch}:null,out=phStraighten(c,W,H,tl,PH_CAM.facing==="user");
+    out.toBlob(function(b){phCamStop();closeModal();if(b)phSave(b,today(),tl);},"image/jpeg",.9);flash();play("complete");};
   var n=PH_CAM.timer;if(!n){go();return;}
   var el=document.getElementById("phcount");(function tick(){if(!PH_CAM||!document.getElementById("phcount"))return;if(n<=0){el.textContent="";go();return;}el.textContent=n;play("press");n--;setTimeout(tick,1000);})();
 }
@@ -2502,7 +2539,7 @@ function phBA(){
   });
 }
 function phAlbumsForm(){
-  openModal('<span class="tag">Albums</span><p class="sub">One album per angle, like Body front, Body side or Face.</p><div class="phalist">'+phAlbums().map(function(a,i){return '<div class="phal"><span>'+esc(a)+'</span>'+(phAlbums().length>1?'<button class="btn sm ghost" data-a="phdelalb" data-id="'+i+'">Remove</button>':'')+'</div>';}).join("")+'</div><div class="field"><input id="phnew" maxlength="20" placeholder="New album name"></div><div class="row"><button class="btn ghost" data-a="close">Done</button><button class="btn primary" data-a="phaddalb">Add album</button></div>');
+  openModal('<span class="tag">Albums</span><p class="sub">One album per shot. Each album has its own guide and its own time-lapse.</p><div class="phalist">'+phAlbums().map(function(a,i){return '<div class="phal"><span>'+esc(a)+'<small>'+(PH_KINDS.filter(function(k){return k[0]===phKind(a);})[0]||["","Full body"])[1]+' guide</small></span>'+(phAlbums().length>1?'<button class="btn sm ghost" data-a="phdelalb" data-id="'+i+'">Remove</button>':'')+'</div>';}).join("")+'</div><div class="field"><input id="phnew" maxlength="20" placeholder="New album name, e.g. Side profile"></div><div class="field"><select id="phnewk">'+PH_KINDS.map(function(k){return '<option value="'+k[0]+'">'+k[1]+' guide</option>';}).join("")+'</select></div><div class="row"><button class="btn ghost" data-a="close">Done</button><button class="btn primary" data-a="phaddalb">Add album</button></div>');
 }
 
 /* ---------- Effects ---------- */
@@ -3008,7 +3045,7 @@ function handleAction(b){
   else if(a==="phba"){phBA();}
   else if(a==="phbasave"){if(view.phBA)phSaveBlob(view.phBA,"hunter-"+phAlbum().toLowerCase()+"-before-after-"+today()+".jpg");}
   else if(a==="phalbums"){phAlbumsForm();}
-  else if(a==="phaddalb"){var nm=(document.getElementById("phnew").value||"").trim().slice(0,20);if(!nm||phAlbums().indexOf(nm)>=0)return;S.photoAlbums.push(nm);save();phAlbumsForm();render();}
+  else if(a==="phaddalb"){var nm=(document.getElementById("phnew").value||"").trim().slice(0,20);if(!nm||phAlbums().indexOf(nm)>=0)return;S.photoAlbums.push(nm);S.photoKinds=S.photoKinds||{};S.photoKinds[nm]=document.getElementById("phnewk").value;save();phAlbumsForm();render();}
   else if(a==="phdelalb"){var ai=+id;if(phAlbums().length>1){S.photoAlbums.splice(ai,1);save();phAlbumsForm();render();}}
   else if(a==="phdate"){var fd=view.phPending,dv=(document.getElementById("phd")||{}).value;if(fd&&dv){closeModal();phSave(fd,dv>today()?today():dv);view.phPending=null;}}
   else if(a==="rankall")rankAllQuests();
