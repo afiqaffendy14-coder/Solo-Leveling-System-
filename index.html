@@ -913,7 +913,7 @@ function migrate(o){
   if(!o.army)o.army={};if(o.showArmy===undefined)o.showArmy=true;
   if(!Array.isArray(o.titles))o.titles=[];
   if(!o.notes)o.notes=[];if(!o.notesSeen)o.notesSeen=0;
-  if(!o.gear||!o.gear.arm)o.gear={outfit:"bare",head:"nohead",arm:"noarm",weapon:"none",aura:"noaura",bg:"grid",cape:false,scarf:false,veins:false};
+  if(!o.gear||(!o.gear.arm&&o.gear.armR===undefined))o.gear={outfit:"bare",head:"nohead",arm:"noarm",weapon:"none",aura:"noaura",bg:"grid",cape:false,scarf:false,veins:false};
   if(!o.gear.armSide)o.gear.armSide="right";
   if(!o.gear.weaponSide)o.gear.weaponSide="right";
   if(o.gear.armR===undefined){var sd=o.gear.armSide||"right",ar=o.gear.arm||"noarm";o.gear.armR=sd==="left"?"noarm":ar;o.gear.armL=sd==="right"?"noarm":ar;}
