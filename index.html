@@ -221,6 +221,9 @@ button.ttl{cursor:pointer;font-size:.74rem;padding:3px 9px}
 .rklist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border:1px solid rgba(var(--g),.15);border-radius:6px}.rklist li.chg{border-color:rgba(255,204,85,.5);background:rgba(255,204,85,.05)}
 .rklist b{font-size:.88rem}.rklist small{display:block;font-size:.72rem;color:var(--muted)}.rkto{font-family:var(--display);display:flex;gap:4px;align-items:center;grid-row:span 2}.rkto i{font-style:normal;font-weight:700}.rklist .sub{font-size:.7rem}
 button.bx{font:inherit;font-family:var(--display);font-size:.62rem;cursor:pointer;padding:0;background:transparent;color:var(--muted)}button.bx:active{transform:scale(.92)}.bhint{margin:10px 0 0;font-size:.76rem}
+.shsw{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:6px 0 4px}.shsw .btn{min-width:34px;padding-left:0;padding-right:0;font-size:1rem}
+.shsw span{font-size:.68rem;line-height:1.25;color:var(--muted);text-align:center}.shsw span b{color:var(--text);font-size:.9rem}
+.shsw.one .btn{width:100%;font-size:.72rem;padding:6px 4px}.gear.kept .pv{filter:grayscale(.6) brightness(.6)}
 .lockn{display:block;margin-top:6px;font-size:.66rem;letter-spacing:.06em;color:var(--muted)}
 .phlevel{margin:-2px 0 8px;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
 .phl-bar{position:relative;width:60%;height:10px;border-radius:6px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.5)}.phl-bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#fff;opacity:.7}
@@ -910,7 +913,7 @@ function migrate(o){
   if(!o.look.pattern)o.look.pattern="none";
   if(["spark","eye","cyclops","triclops","dots","smile"].indexOf(o.look.mark)>=0)o.look.mark="runeeyes";
   if(o.look.mark==="demon"||o.look.mark==="oni")o.look.mark="twinslit";
-  if(!o.army)o.army={};if(o.showArmy===undefined)o.showArmy=true;
+  if(!o.army)o.army={};if(!o.armyKept)o.armyKept={};if(o.showArmy===undefined)o.showArmy=true;
   if(!Array.isArray(o.titles))o.titles=[];
   if(!o.notes)o.notes=[];if(!o.notesSeen)o.notesSeen=0;
   if(!o.gear||(!o.gear.arm&&o.gear.armR===undefined))o.gear={outfit:"bare",head:"nohead",arm:"noarm",weapon:"none",aura:"noaura",bg:"grid",cape:false,scarf:false,veins:false};
@@ -1886,7 +1889,7 @@ function benchReady(b){var last=null;b.entries.forEach(function(x){if(x.r)last=x
 function benchDelta(b){var en=b.entries;if(en.length<2||!en[0].v)return null;var f=en[0].v,l=en[en.length-1].v;return (b.better==="down"?(f-l):(l-f))/Math.abs(f)*100;}
 function tabHunter(){
   var tchips=titleChips();
-  var h='<section class="win"><div class="win-h"><span class="tag">Hunter</span><button class="link" data-a="tab" data-id="store" data-slot="outfit">Armory</button></div>'+(view.trial?'<p class="note gold-note">Trying on gear you don\'t own yet. <button class="btn ghost sm" data-a="endtrial">Take it all off</button> <button class="btn ghost sm" data-a="tab" data-id="store">Keep browsing</button></p>':'')+'<div class="char">'+avatarSVG(S.look,view.trial||S.gear,{id:"main",army:S.showArmy!==false?S.army:null})+
+  var h='<section class="win"><div class="win-h"><span class="tag">Hunter</span><button class="link" data-a="tab" data-id="store" data-slot="outfit">Armory</button></div>'+(view.trial?'<p class="note gold-note">Trying on gear you don\'t own yet. <button class="btn ghost sm" data-a="endtrial">Take it all off</button> <button class="btn ghost sm" data-a="tab" data-id="store">Keep browsing</button></p>':'')+'<div class="char">'+avatarSVG(S.look,view.trial||S.gear,{id:"main",army:S.showArmy!==false?activeArmy():null})+
     '<div class="char-info"><div class="power">POWER<b>'+R.power.toLocaleString()+'</b></div><div class="rank r-'+R.rank+'"><i>'+R.rank+'</i>'+R.rank+'-RANK · LV '+R.lvl+'</div>'+(tchips?'<div class="ttls">'+tchips+'</div>':'')+
     '<div class="char-btns">'+'<button class="btn sm" data-a="customize">Customize</button><button class="btn sm" data-a="wardrobe">Wardrobe</button>'+(armyCount()?'<button class="btn sm primary" data-a="armyview">View army ('+armyCount()+')</button>':'')+'</div>'+
     '<div class="char-btns"><button class="btn sm'+(S.matchTheme?' primary':' ghost')+'" data-a="matchtheme" aria-pressed="'+!!S.matchTheme+'">Match theme '+(S.matchTheme?'ON':'OFF')+'</button>'+(armyCount()?'<button class="btn sm'+(S.showArmy!==false?' primary':' ghost')+'" data-a="togglearmy">Army '+(S.showArmy!==false?'shown':'hidden')+' ('+armyCount()+')</button>':'')+'</div></div></div>'+
@@ -2146,12 +2149,16 @@ var ARMY=[
   {id:"behemoth",name:"Behemoth",special:true,req:"S",cost:190000,max:1,power:5200,desc:"A walking fortress of shadow with a ridged back."},
   {id:"skydragon",name:"Sky Dragon",special:true,req:"SS",cost:300000,max:1,power:8000,desc:"Sovereign of the skies. Only one may ever rise."}
 ];
-function armyCount(){var n=0;ARMY.forEach(function(a){n+=(S.army&&S.army[a.id])||0;});return n;}
-function bossShadows(){return BOSSES.filter(function(b){return S.army&&S.army["b_"+b.key];});}
+function shKept(id){var k=(S.armyKept&&S.armyKept[id])||0,c=(S.army&&S.army[id])||0;return Math.max(0,Math.min(k,c));}
+function shActive(id){return Math.max(0,((S.army&&S.army[id])||0)-shKept(id));}
+function activeArmy(){var m={};Object.keys(S.army||{}).forEach(function(k){var v=shActive(k);if(v)m[k]=v;});return m;}
+function keptCount(){var n=0;Object.keys(S.army||{}).forEach(function(k){n+=shKept(k);});return n;}
+function armyCount(){var n=0;ARMY.forEach(function(a){n+=shActive(a.id);});return n;}
+function bossShadows(){return BOSSES.filter(function(b){return shActive("b_"+b.key);});}
 var SH_MULT=[1,1,1.6,2.4,3.5,5],SH_UPCOST=[0,0,2,5,12,30];
 function shPower(a,tier){return Math.round(a.power*SH_MULT[tier||shTierOf(a.id)]);}
 function shName(a,tier){tier=tier||shTierOf(a.id);return (SH_TIER_NAME[tier]?SH_TIER_NAME[tier]+" ":"")+a.name;}
-function armyPower(){var p=0;ARMY.forEach(function(a){p+=((S.army&&S.army[a.id])||0)*shPower(a);});bossShadows().forEach(function(b){p+=b.power;});return p;}
+function armyPower(){var p=0;ARMY.forEach(function(a){p+=shActive(a.id)*shPower(a);});bossShadows().forEach(function(b){p+=b.power;});return p;}
 var SH_VB={wolf:"-70 -100 140 110",wyvern:"-90 -60 180 90",skydragon:"-150 -100 300 130",behemoth:"-125 -150 250 160",valkyrie:"-140 -205 280 250",ashen:"-80 -200 160 210",dancer:"-100 -205 200 215",archmage:"-72 -200 144 210"};
 function shDefs(id){return '<defs><filter id="gl'+id+'" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6"/></filter><filter id="gs'+id+'" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>';}
 function shadowCard(t,tier){
@@ -2268,7 +2275,7 @@ function simulate(f){
 }
 var battleTimer=null;
 function battleArmySVG(){
-  var army=S.army||{},n=armyCount()+bossShadows().length;if(!n)return "";
+  var army=activeArmy(),n=armyCount()+bossShadows().length;if(!n)return "";
   return '<svg viewBox="0 0 300 210" preserveAspectRatio="xMidYMax meet" aria-hidden="true">'+staticSVG(formationSVG((function(){var c=capArmy(army,11,4,1,0),b=Object.keys(c).filter(function(k){return k.indexOf("b_")===0;});b.slice(1).forEach(function(k){delete c[k];});return c;})(),"ba",{cx:205,front:206,hz:140,zs:.33,sc0:.44,sp0:40,aisle:0,per:4,fullK:99,bossGap:60,bossSc:.34,skyY:40,vx:60,vy:18,flySc:.42}))+'</svg>';
 }
 function bossFirstClear(F){
@@ -2380,21 +2387,22 @@ function bossSection(){
     h+='<div class="bosscard'+(done?' done':'')+'"><div class="bpv">'+monsterSVG(B,true,"bc"+B.key)+'</div><div><span class="srank sr-'+(done?'S':'B')+'">FLOOR '+B.floor+'</span><b>'+esc(B.name)+'</b><span class="sub">'+(done?'Cleared':'First clear')+': +'+B.bonus.toLocaleString()+' gold</span><span class="sub">Drop: '+esc(g?g.name:"")+'</span><span class="sub">Shadow: '+esc(B.name)+'</span>'+(done?'<span class="own">CLEARED</span>':'')+'</div></div>';});
   return h+'</div>'+how('Each boss pays a big gold bonus the first time you beat it, drops a piece of gear you cannot buy, and joins your shadow army. Boss shadows add power and do not count toward your army limit.')+'</section>';
 }
+function shToggle(id){var k=shKept(id);return '<div class="shsw one"><button class="btn sm'+(k?'':' primary')+'" data-a="'+(k?'shcall':'shkeep')+'" data-id="'+id+'">'+(k?'Kept · Summon':'Summoned · Keep')+'</button></div>';}
 function shadowsSection(){
   var n=armyCount(),cap=armyCap(),seg=view.sseg||"soldiers",bs=bossShadows();
   var h='<section class="win"><div class="win-h"><span class="tag">Shadow Army</span><span class="sub">+'+armyPower().toLocaleString()+' power</span></div>';
-  h+='<div class="armyhead"><div class="armyprev">'+avatarSVG(S.look,S.gear,{id:"ap",army:S.army})+'</div><div class="armynum"><b>'+n+'<small> / '+cap+'</small></b><span class="sub">soldiers'+(bs.length?' · '+bs.length+' boss shadow'+(bs.length===1?'':'s'):'')+'</span><div class="bar"><span style="width:'+Math.min(100,n/cap*100).toFixed(0)+'%"></span></div>'+
+  h+='<div class="armyhead"><div class="armyprev">'+avatarSVG(S.look,S.gear,{id:"ap",army:activeArmy()})+'</div><div class="armynum"><b>'+n+'<small> / '+cap+'</small></b><span class="sub">summoned'+(bs.length?' · '+bs.length+' boss shadow'+(bs.length===1?'':'s'):'')+(keptCount()?' · '+keptCount()+' kept':'')+'</span><div class="bar"><span style="width:'+Math.min(100,n/cap*100).toFixed(0)+'%"></span></div>'+
     '<div class="caps">'+RANK_ORDER.map(function(k){return '<span class="'+(k===R.rank?'on':'')+'"><i class="sr-'+k+'">'+k+'</i>'+ARMY_CAP[k]+'</span>';}).join("")+'</div>'+
     '<button class="btn sm'+(S.showArmy!==false?' primary':' ghost')+'" data-a="togglearmy">On profile: '+(S.showArmy!==false?'shown':'hidden')+'</button></div></div>';
   h+='<div class="dsegs mini" role="tablist">'+[["soldiers","Soldiers"],["unique","Unique"],["bosses","Bosses"]].map(function(x){return '<button role="tab" data-a="sseg" data-id="'+x[0]+'" aria-selected="'+(seg===x[0])+'">'+x[1]+'</button>';}).join("")+'</div><div class="armory">';
-  if(seg==="bosses")BOSSES.forEach(function(B){var got=S.army&&S.army["b_"+B.key];
-    h+='<div class="gear'+(got?' eq':' locked')+'"><div class="pv shbox">'+(got?shadowCard("b_"+B.key):'<div class="shq">?</div>')+'</div><b>'+esc(B.name)+'</b><span class="gd">'+(got?'Boss shadow · +'+B.power.toLocaleString()+' power':'Defeat on floor '+B.floor+' to claim.')+'</span>'+(got?'<span class="own">RISEN</span>':'')+'</div>';});
-  else ARMY.filter(function(a){return seg==="unique"?a.special:!a.special;}).forEach(function(a){var c=(S.army&&S.army[a.id])||0,full=c>=a.max,atCap=n>=cap,lk=a.req&&!S.unlockAll&&!rankOK(a.req,R.lvl),tier=shTierOf(a.id),nx=tier+1,upc=nx<=5?a.cost*SH_UPCOST[nx]:0;
-    var lbl=full?(a.special?'Risen':'Max'):lk?a.req+'-rank':atCap?'Army full':'Summon';
-    h+='<div class="gear shc tier'+tier+(a.special?' unique':'')+(c?' eq':'')+'"><div class="pv shbox">'+shadowCard(a.id)+'<span class="stars">'+[1,2,3,4,5].map(function(k){return '<i class="'+(k<=tier?'on':'')+'"></i>';}).join("")+'</span></div>'+(a.special?'<span class="utag">UNIQUE</span>':'')+'<b>'+esc(shName(a))+'</b><span class="gd">'+esc(a.desc)+'</span><div class="gb"><span>'+coin()+a.cost.toLocaleString()+'</span><span class="own">'+c+'/'+a.max+'</span></div><span class="pw">+'+shPower(a).toLocaleString()+' power each</span>'+
-      '<button class="btn sm '+(full||lk||atCap?'ghost':'primary')+'" data-a="summon" data-id="'+a.id+'"'+(full||lk||atCap||R.gold<a.cost?' disabled':'')+'>'+lbl+'</button>'+
+  if(seg==="bosses")BOSSES.forEach(function(B){var got=S.army&&S.army["b_"+B.key],bk=shKept("b_"+B.key);
+    h+='<div class="gear'+(got&&!bk?' eq':got?' kept':' locked')+'"><div class="pv shbox">'+(got?shadowCard("b_"+B.key):'<div class="shq">?</div>')+'</div><b>'+esc(B.name)+'</b><span class="gd">'+(got?'Boss shadow · +'+B.power.toLocaleString()+' power':'Defeat on floor '+B.floor+' to claim.')+'</span>'+(got?shToggle("b_"+B.key):'')+'</div>';});
+  else ARMY.filter(function(a){return seg==="unique"?a.special:!a.special;}).forEach(function(a){var c=(S.army&&S.army[a.id])||0,ka=shKept(a.id),ac=c-ka,full=c>=a.max,atCap=n>=cap,lk=a.req&&!S.unlockAll&&!rankOK(a.req,R.lvl),tier=shTierOf(a.id),nx=tier+1,upc=nx<=5?a.cost*SH_UPCOST[nx]:0;
+    var lbl=full?(a.special?'Risen':'Max'):lk?a.req+'-rank':'Arise';
+    h+='<div class="gear shc tier'+tier+(a.special?' unique':'')+(ac?' eq':c?' kept':'')+'"><div class="pv shbox">'+shadowCard(a.id)+'<span class="stars">'+[1,2,3,4,5].map(function(k){return '<i class="'+(k<=tier?'on':'')+'"></i>';}).join("")+'</span></div>'+(a.special?'<span class="utag">UNIQUE</span>':'')+'<b>'+esc(shName(a))+'</b><span class="gd">'+esc(a.desc)+'</span><div class="gb"><span>'+coin()+a.cost.toLocaleString()+'</span><span class="own">'+c+'/'+a.max+'</span></div>'+(c?(a.max===1?shToggle(a.id):'<div class="shsw"><button class="btn sm" data-a="shkeep" data-id="'+a.id+'" aria-label="Keep one"'+(ac?'':' disabled')+'>−</button><span><b>'+ac+'</b> summoned<br>'+ka+' kept</span><button class="btn sm" data-a="shcall" data-id="'+a.id+'" aria-label="Summon one"'+(ka&&!atCap?'':' disabled')+'>+</button></div>'):'')+'<span class="pw">+'+shPower(a).toLocaleString()+' power each</span>'+
+      '<button class="btn sm '+(full||lk?'ghost':'primary')+'" data-a="summon" data-id="'+a.id+'"'+(full||lk||R.gold<a.cost?' disabled':'')+'>'+lbl+'</button>'+
       (c&&nx<=5?'<button class="btn sm evob" data-a="shup" data-id="'+a.id+'"'+(R.gold<upc?' disabled':'')+'>Evolve to '+SH_TIER_NAME[nx]+'<small>'+coin()+upc.toLocaleString()+'</small></button>':c?'<span class="maxt">MAX TIER</span>':'')+'</div>';});
-  h+='</div>'+how('Your army limit grows with your hunter rank, up to 100 at SSS. Evolve a shadow type to raise every soldier of that type: Veteran 1.6×, Elite 2.4×, Commander 3.5×, Sovereign 5× power, with new armour, a rune circle, a war cloak and crest, then a golden halo. Unique shadows are one of a kind and need a higher rank. Shadows take your theme colour.'+(S.unlockAll?' Preview mode skips the rank needed for Unique shadows, but the army limit still follows your rank.':''))+'</section>';
+  h+='</div>'+how('Your army limit grows with your hunter rank, up to 100 at SSS. Only summoned shadows fight and count toward it. Kept shadows rest in reserve; use − and + to swap. If your army is full, a new shadow is kept. Evolve a shadow type to raise every soldier of that type: Veteran 1.6×, Elite 2.4×, Commander 3.5×, Sovereign 5× power, with new armour, a rune circle, a war cloak and crest, then a golden halo. Unique shadows are one of a kind and need a higher rank. Shadows take your theme colour.'+(S.unlockAll?' Preview mode skips the rank needed for Unique shadows, but the army limit still follows your rank.':''))+'</section>';
   return h;
 }
 function skillsSection(){
@@ -3155,13 +3163,15 @@ function handleAction(b){
   else if(a==="dseg"){view.dseg=id;play("tab");render();}
   else if(a==="sseg"){view.sseg=id;play("tab");render();}
   else if(a==="previewmode"){S.unlockAll=!S.unlockAll;save();closeModal();render();toast("Preview mode",S.unlockAll?"Everything unlocked to try.":"Off. Gear and skills unlock by rank and purchase again.");}
-  else if(a==="summon"){var am=find(ARMY,id);if(!am)return;var cnt=(S.army[id]||0);if(cnt>=am.max||(am.req&&!S.unlockAll&&!rankOK(am.req,R.lvl)))return;if(armyCount()>=armyCap()){play("error");toast("Army full","Rank up to command more shadows.");return;}
+  else if(a==="summon"){var am=find(ARMY,id);if(!am)return;var cnt=(S.army[id]||0);if(cnt>=am.max||(am.req&&!S.unlockAll&&!rankOK(am.req,R.lvl)))return;var toKeep=armyCount()>=armyCap();
     var bf=derive();if(bf.gold<am.cost){play("error");toast("Not enough gold","You need "+(am.cost-bf.gold).toLocaleString()+" more.");return;}
-    S.purchases.push({id:uid(),kind:"army",ref:id,name:am.name,cost:am.cost,d:t});S.army[id]=cnt+1;save();render();flash();play("level");if(am.special)notify("Unique shadow: "+am.name,am.name+" has risen. Only one may ever exist.");
+    S.purchases.push({id:uid(),kind:"army",ref:id,name:am.name,cost:am.cost,d:t});S.army[id]=cnt+1;if(toKeep){S.armyKept=S.armyKept||{};S.armyKept[id]=shKept(id)+1;}save();render();flash();play("level");if(toKeep)toast("Kept in reserve","Your army is full. Keep another shadow to summon this one.");if(am.special)notify("Unique shadow: "+am.name,am.name+" has risen. Only one may ever exist.");
     openModal('<div class="levelup'+(am.special?' uniq':'')+'"><span class="tag">'+(am.special?'Unique Shadow':'Shadow Army')+'</span><div class="big" style="letter-spacing:.3em">ARISE</div><div style="display:grid;place-items:center;margin:6px 0" class="shbox">'+shadowCard(id)+'</div><p><b style="color:var(--text)">'+esc(am.name)+'</b> has risen. Your army: '+armyCount()+' / '+armyCap()+' · +'+armyPower().toLocaleString()+' power.</p><div class="row" style="justify-content:center"><button class="btn primary" data-a="close">Accept</button></div></div>');var sv2=modal.querySelector(".shpv");if(sv2){sv2.style.maxWidth="160px";sv2.style.height="170px";}}
   else if(a==="shup")evolveShadow(id);
+  else if(a==="shkeep"){if(!shActive(id))return;S.armyKept=S.armyKept||{};S.armyKept[id]=shKept(id)+1;save();render();play("soft");}
+  else if(a==="shcall"){if(!shKept(id))return;if(id.indexOf("b_")!==0&&armyCount()>=armyCap()){play("error");toast("Army full","Keep another shadow first.");return;}S.armyKept[id]=shKept(id)-1;save();render();play("press");}
   else if(a==="armyview"){openModal('<div class="win-h"><span class="tag">Your Army</span><span class="sub">'+armyCount()+' shadows'+(bossShadows().length?' · '+bossShadows().length+' bosses':'')+' · +'+armyPower().toLocaleString()+' power</span></div><div id="panohost" class="pano-load">Assembling the army…</div><div class="row"><button class="btn ghost" data-a="close">Close</button></div>','panom');play("open");
-    setTimeout(function(){var host=document.getElementById("panohost");if(!host)return;host.className="";host.innerHTML=armyPanorama(S.army,S.look,S.gear);panoSetup();},60);}
+    setTimeout(function(){var host=document.getElementById("panohost");if(!host)return;host.className="";host.innerHTML=armyPanorama(activeArmy(),S.look,S.gear);panoSetup();},60);}
   else if(a==="pz"){if(view.pz)view.pz(id);}
   else if(a==="togglearmy"){S.showArmy=!S.showArmy;save();render();}
   else if(a==="matchtheme"){S.matchTheme=!S.matchTheme;save();render();play("notify");}
@@ -3191,7 +3201,7 @@ function handleAction(b){
     if(p.kind==="item"&&((p.ref==="shield"&&R.shields<1)||(p.ref==="potion"&&R.potions<1))){toast("System","That item was already used.");play("error");return;}
     S.purchases.pop();
     if(p.kind==="theme"){S.themes=S.themes.filter(function(x){return x!==p.ref;});if(S.theme===p.ref)S.theme="azure";}
-    if(p.kind==="army"&&S.army[p.ref])S.army[p.ref]--;
+    if(p.kind==="army"&&S.army[p.ref]){S.army[p.ref]--;if(S.armyKept&&S.armyKept[p.ref]>S.army[p.ref])S.armyKept[p.ref]=S.army[p.ref];}
     if(p.kind==="shup"&&S.shTier)S.shTier[p.ref]=Math.max(1,(p.tier||2)-1);
     if(p.kind==="set"&&p.parts){S.owned=S.owned.filter(function(x){return p.parts.indexOf(x)<0;});p.parts.forEach(function(pid){var gr0=GEAR_BY[pid];if(!gr0)return;if(gr0.slot==="arm"){if(S.gear.armR===pid)S.gear.armR="noarm";if(S.gear.armL===pid)S.gear.armL="noarm";}else if(TOGGLES.indexOf(gr0.slot)>=0)S.gear[gr0.slot]=false;else if(S.gear[gr0.slot]===pid)S.gear[gr0.slot]=({outfit:"bare",head:"nohead",weapon:"none",aura:"noaura",bg:"grid"})[gr0.slot]||S.gear[gr0.slot];});}
     if(p.kind==="gear"){S.owned=S.owned.filter(function(x){return x!==p.ref;});var gr=GEAR_BY[p.ref];if(gr){if(gr.slot==="arm"){if(S.gear.armR===p.ref)S.gear.armR="noarm";if(S.gear.armL===p.ref)S.gear.armL="noarm";}else if(TOGGLES.indexOf(gr.slot)>=0)S.gear[gr.slot]=false;else if(S.gear[gr.slot]===p.ref)S.gear[gr.slot]=GEAR.filter(function(x){return x.slot===gr.slot&&x.cost===0;})[0].id;}}
