@@ -3258,8 +3258,14 @@ function handleAction(b){
     var n=seed({name:S.name,sound:S.sound,look:S.look,battle:{label:S.battle&&S.battle.label},rewards:S.rewards,bench:S.bench,evalDay:S.evalDay});
     n.quests=keepQ;n.gates=keepG;n.reminders=S.reminders;n.claudeChat=S.claudeChat;n.tourDone=S.tourDone;n.matchTheme=S.matchTheme;n.bdays=S.bdays||[];delete n.fresh;delete n.migratedNote;
     S=n;save();closeModal();view.tab="quests";render();window.scrollTo(0,0);toast("System","Day 1. A new hunter awakens.");play("level");}
-  else if(a==="reset"){openModal('<span class="tag">Reset</span><h2>Erase all progress?</h2><p>Level, gold, gear, stats, battle record and log will be deleted. Your name, look and birthdays stay.</p><div class="row"><button class="btn ghost" data-a="close">Keep my progress</button><button class="btn danger" data-a="reset2">Erase everything</button></div>','penalty');}
-  else if(a==="reset2"){S=seed({name:S.name,bdays:S.bdays,sound:S.sound,look:S.look,battle:S.battle,rewards:S.rewards,bench:S.bench,evalDay:S.evalDay});save();closeModal();render();toast("System","A new hunter awakens.");play("level");}
+  else if(a==="reset"){openModal('<span class="tag">Reset</span><h2>Erase everything?</h2><p>Level, gold, gear, shadows, stats, battle record, sick days and the whole log go. <b>All quests, gates and tests are deleted too</b>, so you start with an empty list.</p><p class="sub">Your name, look, birthdays, rewards list and settings stay. This only affects this phone.</p>'+
+    '<label class="chk" style="display:flex;gap:10px;align-items:center;margin:12px 0"><input type="checkbox" id="rs-ph"> Also delete my progress photos</label>'+
+    '<div class="row"><button class="btn ghost" data-a="close">Keep my progress</button><button class="btn danger" data-a="reset2">Erase everything</button></div>','penalty');}
+  else if(a==="reset2"){var delPh=document.getElementById("rs-ph")&&document.getElementById("rs-ph").checked;
+    var n2=seed({name:S.name,bdays:S.bdays,sound:S.sound,look:S.look,battle:{label:S.battle&&S.battle.label},rewards:S.rewards,bench:S.bench,evalDay:S.evalDay});
+    n2.quests=[];n2.gates=[];n2.bench=[];n2.reminders=S.reminders;n2.claudeChat=S.claudeChat;n2.tourDone=S.tourDone;n2.matchTheme=S.matchTheme;Object.keys(S).forEach(function(k){if(/^(ph|photo)/.test(k)&&k!=="photoCount")n2[k]=S[k];});if(!delPh&&S.photoCount)n2.photoCount=S.photoCount;delete n2.fresh;delete n2.migratedNote;
+    if(delPh){var dp=PH_DB;PH_DB=null;var kill=function(){try{indexedDB.deleteDatabase("hunter-photos");}catch(e){}};if(dp)dp.then(function(db){db.close();kill();},kill);else kill();}
+    S=n2;save();closeModal();view.tab="quests";render();window.scrollTo(0,0);toast("System","Clean slate. Add your first quest.");play("level");}
   else if(a==="close")closeModal();
 }
 
