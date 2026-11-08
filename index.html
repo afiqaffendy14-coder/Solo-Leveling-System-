@@ -603,6 +603,8 @@ button.bx{font:inherit;font-family:var(--display);font-size:.62rem;cursor:pointe
 .cell.l3{background:var(--glow);box-shadow:0 0 6px rgba(var(--g),.7)}
 .cell.red{background:var(--gold);box-shadow:0 0 6px rgba(255,204,85,.6)}
 .cell.miss{background:rgba(255,77,109,.35)}
+.cell.sick{background:rgba(170,140,255,.35);border:1px dashed #c4b0ff}
+.sickl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.sickl li{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid rgba(140,210,255,.35);border-radius:5px;background:rgba(120,200,255,.06);font-size:.85rem}
 .cell.rest{background:transparent;border:1px dashed rgba(255,204,85,.7)}
 .cell.future{background:transparent}
 .cell.today{outline:1px solid #fff;outline-offset:1px}
@@ -971,6 +973,7 @@ function derive(){
     var state;
     if(!req.length)state="none";
     else if(cleared)state="clear";
+    else if(e._sick)state="sick";
     else if(e._rest)state="rest";
     else if(e._shield)state="shield";
     else if(d===t)state="open";
@@ -991,7 +994,7 @@ function derive(){
   for(var k=t;k>=S.created;k=addDays(k,-1)){
     var st=days[k]&&days[k].state;
     if(st==="clear"||st==="rest"||st==="shield"||st==="redeemed")streak++;
-    else if(st==="open"||st==="none"||st==="pending")continue;
+    else if(st==="open"||st==="none"||st==="pending"||st==="sick")continue;
     else break;
   }
   var net=Math.max(0,earned-pen)+(S.bonusXP||0),lvl=1,rem=net;
@@ -1010,7 +1013,7 @@ function derive(){
   var bw=0;Object.keys(S.battle.days).forEach(function(d){if(S.battle.days[d]==="w"&&d>=S.created)bw++;});
   var D=S.dungeon||{};r.keys=Math.max(0,quests+cdays*2+bw+(D.bonusKeys||0)-(D.used||0));r.dfloor=D.floor||0;r.bossKills=D.bosses||0;r.armyN=armyCount();
   r.power=STATS.reduce(function(a,s){return a+stats[s];},0)*10+lvl*25+armyPower();
-  var mm={};Object.keys(days).forEach(function(d){if(d>=t)return;var m=mkey(d),x=mm[m]=mm[m]||{n:0,ok:0};if(days[d].req){x.n++;if(["clear","rest","shield","redeemed"].indexOf(days[d].state)>=0)x.ok++;}});
+  var mm={};Object.keys(days).forEach(function(d){if(d>=t)return;var m=mkey(d),x=mm[m]=mm[m]||{n:0,ok:0};if(days[d].req){x.n++;if(["clear","rest","shield","redeemed","sick"].indexOf(days[d].state)>=0)x.ok++;}});
   r.perfectMonths=Object.keys(mm).filter(function(m){return m<mkey(t)&&mm[m].n>=28&&mm[m].ok===mm[m].n;}).length;
   r.titles=[];TRACKS.forEach(function(tr){var v=tr.v(r)||0;tr.names.forEach(function(n,i){r.titles.push({id:tr.id+":"+i,name:n,tier:i,track:tr.id,got:v>=tr.at[i]});});});
   return r;
@@ -2081,12 +2084,12 @@ function tabInsights(){
   h+=bd.length?'<ul class="hist">'+bd.map(function(b){var p=b.md.split("-");return '<li><span><b>'+esc(b.name)+'</b> <button class="link" data-a="delbday" data-id="'+b.id+'">Remove</button></span><span class="d">'+new Date(2000,+p[0]-1,+p[1]).toLocaleDateString(undefined,{day:"numeric",month:"short"})+'</span></li>';}).join("")+'</ul>':'<p class="empty">Birthdays repeat every year and show on Quests a week before.</p>';
   h+='</section>';
 
-  h+='<section class="win"><div class="win-h"><span class="tag">Record</span><span class="sub">Last 12 weeks</span></div><div class="heat">';
+  h+='<section class="win"><div class="win-h"><span class="tag">Record</span><button class="link" data-a="sick">+ Sick leave</button></div><div class="heat">';
   var end=parseKey(t);end.setDate(end.getDate()+(6-((end.getDay()+6)%7)));var start=new Date(end);start.setDate(start.getDate()-83);
   for(var c=0;c<12;c++){h+='<div class="col">';for(var r=0;r<7;r++){var dd=new Date(start);dd.setDate(dd.getDate()+c*7+r);var k=key(dd),info=R.days[k],cls="cell";
-    if(k>t)cls+=" future";else if(info){if(info.state==="clear")cls+=" l3";else if(info.state==="redeemed")cls+=" red";else if(info.state==="miss")cls+=" miss";else if(info.state==="rest"||info.state==="shield")cls+=" rest";else if(info.req&&info.done)cls+=info.done/info.req>=.5?" l2":" l1";}
+    if(k>t)cls+=" future";else if(info){if(info.state==="clear")cls+=" l3";else if(info.state==="redeemed")cls+=" red";else if(info.state==="miss")cls+=" miss";else if(info.state==="sick")cls+=" sick";else if(info.state==="rest"||info.state==="shield")cls+=" rest";else if(info.req&&info.done)cls+=info.done/info.req>=.5?" l2":" l1";}
     if(k===t)cls+=" today";h+='<div class="'+cls+'" title="'+k+(info?' · '+info.done+'/'+info.req:'')+'"></div>';}h+='</div>';}
-  h+='</div><div class="legend"><span><i class="cell l3"></i>Cleared</span><span><i class="cell red"></i>Redeemed</span><span><i class="cell l2"></i>Partly</span><span><i class="cell rest"></i>Rest</span><span><i class="cell miss"></i>Missed</span></div>';
+  h+='</div><div class="legend"><span><i class="cell l3"></i>Cleared</span><span><i class="cell red"></i>Redeemed</span><span><i class="cell l2"></i>Partly</span><span><i class="cell rest"></i>Shield</span><span><i class="cell sick"></i>Sick</span><span><i class="cell miss"></i>Missed</span></div>';
   h+=how('Rank ladder: D at level 5, C at 10, B at 17, A at 26, S at 38. Clearing everything daily, that is roughly 1 week, 1 month, 3 months, 7 months and 16 months.')+'</section>';
   return h;
 }
@@ -2095,7 +2098,7 @@ function monthReport(m){
   var tracked=0,cleared=0,saved=0,xp=0,prayOn=0,prayDays=0,perQ={};
   if(from<=to)for(var d=from;d<=to;d=addDays(d,1)){
     var info=R.days[d];if(!info)continue;xp+=info.xp;
-    if(info.req&&d<t){tracked++;if(info.state==="clear")cleared++;else if(info.state==="redeemed"||info.state==="rest"||info.state==="shield")saved++;}
+    if(info.req&&d<t&&info.state!=="sick"){tracked++;if(info.state==="clear")cleared++;else if(info.state==="redeemed"||info.state==="rest"||info.state==="shield")saved++;}
     var e=S.log[d]||{};
     S.quests.forEach(function(q){if(!activeOn(q,d))return;if(isPrayer(q)){if(d<t||e[q.id]){prayDays++;if(e[q.id]&&!e["_m:"+q.id])prayOn++;}return;}
       var p=perQ[q.id]=perQ[q.id]||{q:q,full:0,mini:0,n:0};if(d<t||e[q.id])p.n++;if(e[q.id]){if(e["_m:"+q.id])p.mini++;else p.full++;}});
@@ -2387,6 +2390,13 @@ function bossSection(){
     h+='<div class="bosscard'+(done?' done':'')+'"><div class="bpv">'+monsterSVG(B,true,"bc"+B.key)+'</div><div><span class="srank sr-'+(done?'S':'B')+'">FLOOR '+B.floor+'</span><b>'+esc(B.name)+'</b><span class="sub">'+(done?'Cleared':'First clear')+': +'+B.bonus.toLocaleString()+' gold</span><span class="sub">Drop: '+esc(g?g.name:"")+'</span><span class="sub">Shadow: '+esc(B.name)+'</span>'+(done?'<span class="own">CLEARED</span>':'')+'</div></div>';});
   return h+'</div>'+how('Each boss pays a big gold bonus the first time you beat it, drops a piece of gear you cannot buy, and joins your shadow army. Boss shadows add power and do not count toward your army limit.')+'</section>';
 }
+function sickForm(){
+  var t=today(),y=addDays(t,-1),list=Object.keys(S.log).filter(function(d){return S.log[d]._sick;}).sort().reverse();
+  openModal('<span class="tag">Sick leave</span><h2>Days you were sick</h2><p class="sub">Sick days don\'t use hearts, don\'t lose EXP and don\'t break your streak. They don\'t add to it either.</p>'+
+    '<div class="grid2"><div class="field"><label for="sk-from">From</label><input id="sk-from" type="date" value="'+(y<S.created?t:y)+'" min="'+S.created+'" max="'+t+'"></div><div class="field"><label for="sk-to">To</label><input id="sk-to" type="date" value="'+(y<S.created?t:y)+'" min="'+S.created+'" max="'+t+'"></div></div>'+
+    '<div class="row"><button class="btn ghost" data-a="close">Cancel</button><button class="btn primary" data-a="sicksave">Mark as sick</button></div>'+
+    (list.length?'<p class="sub" style="margin:16px 0 0">Logged ('+list.length+')</p><ul class="sickl">'+list.slice(0,30).map(function(d){return '<li><span>'+fmtDate(d)+'</span><button class="link" data-a="sickdel" data-id="'+d+'">Remove</button></li>';}).join("")+'</ul>':''));
+}
 function shToggle(id){var k=shKept(id);return '<div class="shsw one"><button class="btn sm'+(k?'':' primary')+'" data-a="'+(k?'shcall':'shkeep')+'" data-id="'+id+'">'+(k?'Kept · Summon':'Summoned · Keep')+'</button></div>';}
 function shadowsSection(){
   var n=armyCount(),cap=armyCap(),seg=view.sseg||"soldiers",bs=bossShadows();
@@ -2648,7 +2658,7 @@ function checkDay(){
     openModal('<span class="tag">Penalty Quest</span><h2>Redemption available</h2><p>Yesterday wasn\'t cleared. Redo the '+redQuest+' missed quest'+(redQuest>1?'s':'')+' today, on top of today\'s, and yesterday counts as redeemed.</p>'+
       '<p>Hearts left in '+esc(monthName(mkey(yd)))+': '+heartsLeft(derive(),mkey(yd))+' of '+HEARTS+'.</p>'+
       (penal.length?'<p>Earlier failed days: '+penal.length+' (−'+penal.length*PENALTY_XP+' EXP).</p>':'')+
-      '<div class="row"><button class="btn danger" data-a="close">Accept quest</button></div>','penalty');
+      '<div class="row"><button class="btn ghost" data-a="sickyd" data-id="'+yd+'">I was sick</button><button class="btn danger" data-a="close">Accept quest</button></div>','penalty');
   }else if(penal.length){
     flash(true);play("penalty");
     openModal('<span class="tag">Warning</span><h2>Daily quest failed</h2><p>'+penal.length+' day'+(penal.length>1?'s were':' was')+' not cleared with no hearts left. −'+(penal.length*PENALTY_XP)+' EXP, streak reset.</p><p>No failure, only feedback. Today is a fresh start.</p><div class="row"><button class="btn danger" data-a="close">Accept</button></div>','penalty');
@@ -3168,6 +3178,12 @@ function handleAction(b){
     S.purchases.push({id:uid(),kind:"army",ref:id,name:am.name,cost:am.cost,d:t});S.army[id]=cnt+1;if(toKeep){S.armyKept=S.armyKept||{};S.armyKept[id]=shKept(id)+1;}save();render();flash();play("level");if(toKeep)toast("Kept in reserve","Your army is full. Keep another shadow to summon this one.");if(am.special)notify("Unique shadow: "+am.name,am.name+" has risen. Only one may ever exist.");
     openModal('<div class="levelup'+(am.special?' uniq':'')+'"><span class="tag">'+(am.special?'Unique Shadow':'Shadow Army')+'</span><div class="big" style="letter-spacing:.3em">ARISE</div><div style="display:grid;place-items:center;margin:6px 0" class="shbox">'+shadowCard(id)+'</div><p><b style="color:var(--text)">'+esc(am.name)+'</b> has risen. Your army: '+armyCount()+' / '+armyCap()+' · +'+armyPower().toLocaleString()+' power.</p><div class="row" style="justify-content:center"><button class="btn primary" data-a="close">Accept</button></div></div>');var sv2=modal.querySelector(".shpv");if(sv2){sv2.style.maxWidth="160px";sv2.style.height="170px";}}
   else if(a==="shup")evolveShadow(id);
+  else if(a==="sick")sickForm();
+  else if(a==="sickyd"){before=derive();var le2=S.log[id]=S.log[id]||{};le2._sick=true;delete le2._shield;var nx2=S.log[addDays(id,1)];if(nx2&&nx2._red&&nx2._red.from===id)delete nx2._red;closeModal();afterChange(before,"Sick leave",fmtDate(id)+" excused. Get well soon.","shield");}
+  else if(a==="sicksave"){var sf=document.getElementById("sk-from").value,stv=document.getElementById("sk-to").value||sf;if(!sf)return;if(stv<sf){var tmp=sf;sf=stv;stv=tmp;}if(stv>t)stv=t;if(sf<S.created)sf=S.created;
+    var nd=0;before=derive();for(var sd=sf;sd<=stv&&nd<31;sd=addDays(sd,1)){var le=S.log[sd]=S.log[sd]||{};le._sick=true;delete le._shield;var nxe=S.log[addDays(sd,1)];if(nxe&&nxe._red&&nxe._red.from===sd)delete nxe._red;nd++;}
+    closeModal();afterChange(before,"Sick leave",nd+" day"+(nd>1?"s":"")+" excused. Get well soon.","shield");}
+  else if(a==="sickdel"){if(S.log[id]){delete S.log[id]._sick;save();sickForm();render();}}
   else if(a==="shkeep"){if(!shActive(id))return;S.armyKept=S.armyKept||{};S.armyKept[id]=shKept(id)+1;save();render();play("soft");}
   else if(a==="shcall"){if(!shKept(id))return;if(id.indexOf("b_")!==0&&armyCount()>=armyCap()){play("error");toast("Army full","Keep another shadow first.");return;}S.armyKept[id]=shKept(id)-1;save();render();play("press");}
   else if(a==="armyview"){openModal('<div class="win-h"><span class="tag">Your Army</span><span class="sub">'+armyCount()+' shadows'+(bossShadows().length?' · '+bossShadows().length+' bosses':'')+' · +'+armyPower().toLocaleString()+' power</span></div><div id="panohost" class="pano-load">Assembling the army…</div><div class="row"><button class="btn ghost" data-a="close">Close</button></div>','panom');play("open");
